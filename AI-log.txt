@@ -1,0 +1,4 @@
+1.Hej,po e bejme nje plan per kete projekt, une e kam kete teme-aplikacion me e kriju me AI.
+5.Personal Finance Tracker with budgets (Supabase: transactions{id, amount, category, user_id}) — (Available)
+React Native + Expo Snack: Implemento formular me react-hook-form, vizualizo shpenzimet me grafikë VictoryPie dhe filtro transaksionet duke pyetur Supabase.(me vone darkmode/lightmode)
+me bej nje plan to-do per kete projekt,si t'ia fillojme.
