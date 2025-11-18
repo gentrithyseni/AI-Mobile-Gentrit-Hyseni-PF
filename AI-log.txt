@@ -2,3 +2,9 @@
 5.Personal Finance Tracker with budgets (Supabase: transactions{id, amount, category, user_id}) — (Available)
 React Native + Expo Snack: Implemento formular me react-hook-form, vizualizo shpenzimet me grafikë VictoryPie dhe filtro transaksionet duke pyetur Supabase.(me vone darkmode/lightmode)
 me bej nje plan to-do per kete projekt,si t'ia fillojme.
+2.e kam krijuar github repository 
+https://github.com/gentrithyseni/AI-Mobile-Gentrit-Hyseni-PF/
+supabase projekt https://supabase.com/dashboard/project/iihlrviuvpyzjcjxuphz
+ne .env eshte edhe anon key,tash cka me bo
+3.e krijova tabelat ne supabase, por po del error 42883 si ky :Error: Failed to run sql query: ERROR: 42883: operator does not exist: uuid = text HINT: No operator matches the given name and argument types. You might need to add explicit type casts.
+
