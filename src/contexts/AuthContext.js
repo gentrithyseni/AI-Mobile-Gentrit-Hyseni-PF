@@ -1,15 +1,15 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import supabase from '../config/supabase';
+import supabaseClient from '../config/supabase';
 
 const AuthContext = createContext();
 
 async function ensureProfileExists(user) {
   if (!user) return;
   try {
-    const { data: existing, error: selectErr } = await supabase.from('profiles').select('id').eq('id', user.id).limit(1).maybeSingle();
+    const { data: existing, error: selectErr } = await supabaseClient.from('profiles').select('id').eq('id', user.id).limit(1).maybeSingle();
     if (selectErr) return;
     if (!existing) {
-      await supabase.from('profiles').insert({ id: user.id, email: user.email, username: user.email?.split('@')[0] ?? null }).select();
+      await supabaseClient.from('profiles').insert({ id: user.id, email: user.email, username: user.email?.split('@')[0] ?? null }).select();
     }
   } catch (e) {
     console.warn('ensureProfileExists error', e?.message ?? e);
@@ -24,7 +24,7 @@ export const AuthProvider = ({ children }) => {
     let mounted = true;
 
     const getUser = async () => {
-      const { data } = await supabase.auth.getUser();
+      const { data } = await supabaseClient.auth.getUser();
       if (mounted) {
         const u = data?.user ?? null;
         setUser(u);
@@ -34,7 +34,7 @@ export const AuthProvider = ({ children }) => {
     };
     getUser();
 
-    const { subscription } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { subscription } = supabaseClient.auth.onAuthStateChange(async (_event, session) => {
       const u = session?.user ?? null;
       setUser(u);
       if (u) await ensureProfileExists(u);
@@ -47,13 +47,20 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const signUp = async ({ email, password, username }) => {
-    const { data, error } = await supabase.auth.signUp({ email, password });
-    if (error) return { error };
+    console.log('[auth] signUp called with email:', email);
+    const { data, error } = await supabaseClient.auth.signUp({ email, password });
+    console.log('[auth] signUp response:', { data, error });
+    if (error) {
+      console.error('[auth] signUp error:', error);
+      return { error };
+    }
 
     const user = data?.user;
     if (user) {
       try {
-        await supabase.from('profiles').insert({ id: user.id, email: user.email, username: username || user.email?.split('@')[0] }).select();
+        console.log('[auth] Creating profile for user:', user.id);
+        await supabaseClient.from('profiles').insert({ id: user.id, email: user.email, username: username || user.email?.split('@')[0] }).select();
+        console.log('[auth] Profile created successfully');
       } catch (e) {
         console.warn('create profile after signUp failed', e?.message ?? e);
       }
@@ -62,12 +69,17 @@ export const AuthProvider = ({ children }) => {
   };
 
   const signIn = async ({ email, password }) => {
-    const result = await supabase.auth.signInWithPassword({ email, password });
+    console.log('[auth] signIn called with email:', email);
+    const result = await supabaseClient.auth.signInWithPassword({ email, password });
+    console.log('[auth] signIn response:', result);
+    if (result.error) {
+      console.error('[auth] signIn error:', result.error);
+    }
     return result;
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    await supabaseClient.auth.signOut();
     setUser(null);
   };
 

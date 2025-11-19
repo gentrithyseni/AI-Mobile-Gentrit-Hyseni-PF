@@ -1,54 +1,132 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, Platform } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { useAuth } from '../contexts/AuthContext';
 
 const FOREST_GREEN = '#2d5016';
 
+// Helper function to show alerts that work on both web and mobile
+const showAlert = (title, message) => {
+  if (Platform.OS === 'web') {
+    // On web, use window.alert which actually shows a dialog
+    if (typeof window !== 'undefined' && window.alert) {
+      window.alert(`${title}\n\n${message}`);
+    } else {
+      console.error(`[Alert] ${title}: ${message}`);
+    }
+  } else {
+    // On mobile, use React Native Alert
+    Alert.alert(title, message);
+  }
+};
+
 export default function LoginScreen({ navigation }) {
   const { signIn, signUp } = useAuth();
   const [isSignUp, setIsSignUp] = useState(false);
-  const { control, handleSubmit, watch, reset } = useForm({
+  const [isLoading, setIsLoading] = useState(false);
+  const { control, handleSubmit, reset } = useForm({
     defaultValues: { email: '', password: '', passwordConfirm: '', username: '' },
   });
-  const password = watch('password');
 
   const onSignInSubmit = async (values) => {
+    // Validation
+    if (!values.email.trim()) {
+      showAlert('Error', 'Email is required');
+      return;
+    }
+    if (!values.password.trim()) {
+      showAlert('Error', 'Password is required');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
+      showAlert('Error', 'Please enter a valid email');
+      return;
+    }
+
+    setIsLoading(true);
     try {
+      console.log('[login] Signing in with:', values.email);
       const res = await signIn({ email: values.email, password: values.password });
+      console.log('[login] signIn response:', res);
+      
       if (res.error) {
-        Alert.alert('Sign In Failed', res.error.message || 'Login failed');
+        console.error('[login] Error:', res.error);
+        const errorMessage = res.error.message || 'Login failed. Check your email and password.';
+        showAlert('Sign In Failed', errorMessage);
       } else {
-        // Successfully signed in; app will auto-redirect to home via AuthGate
-        Alert.alert('Success', 'Signed in successfully!');
+        console.log('[login] Successfully signed in');
+        showAlert('Success', 'Signed in successfully!');
       }
     } catch (e) {
-      Alert.alert('Error', e.message);
+      console.error('[login] Exception:', e);
+      const errorMessage = e instanceof Error ? e.message : 'An error occurred during sign in';
+      showAlert('Error', errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const onSignUpSubmit = async (values) => {
-    if (values.password !== values.passwordConfirm) {
-      Alert.alert('Error', 'Passwords do not match');
+    // Validation
+    if (!values.email.trim()) {
+      showAlert('Error', 'Email is required');
       return;
     }
+    if (!values.username.trim()) {
+      showAlert('Error', 'Username is required');
+      return;
+    }
+    if (!values.password.trim()) {
+      showAlert('Error', 'Password is required');
+      return;
+    }
+    if (values.password.length < 6) {
+      showAlert('Error', 'Password must be at least 6 characters');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
+      showAlert('Error', 'Please enter a valid email');
+      return;
+    }
+    if (values.password !== values.passwordConfirm) {
+      showAlert('Error', 'Passwords do not match');
+      return;
+    }
+
+    setIsLoading(true);
     try {
+      console.log('[login] Signing up with:', values.email);
       const res = await signUp({ email: values.email, password: values.password, username: values.username });
+      console.log('[login] signUp response:', res);
+      
       if (res.error) {
-        Alert.alert('Sign Up Failed', res.error.message || 'Registration failed');
+        console.error('[login] Error:', res.error);
+        const errorMessage = res.error.message || 'Registration failed. Try another email.';
+        showAlert('Sign Up Failed', errorMessage);
       } else {
-        Alert.alert('Success', 'Account created! Please sign in now.', [
-          {
-            text: 'OK',
-            onPress: () => {
-              reset();
-              setIsSignUp(false);
+        console.log('[login] Successfully signed up');
+        if (Platform.OS === 'web') {
+          window.alert('Success\n\nAccount created! Please sign in now.');
+          reset();
+          setIsSignUp(false);
+        } else {
+          Alert.alert('Success', 'Account created! Please sign in now.', [
+            {
+              text: 'OK',
+              onPress: () => {
+                reset();
+                setIsSignUp(false);
+              },
             },
-          },
-        ]);
+          ]);
+        }
       }
     } catch (e) {
-      Alert.alert('Error', e.message);
+      console.error('[login] Exception:', e);
+      const errorMessage = e instanceof Error ? e.message : 'An error occurred during sign up';
+      showAlert('Error', errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -128,19 +206,27 @@ export default function LoginScreen({ navigation }) {
 
         {/* Primary Button */}
         <TouchableOpacity
-          style={styles.button}
+          style={[styles.button, isLoading && styles.buttonDisabled]}
           onPress={handleSubmit(isSignUp ? onSignUpSubmit : onSignInSubmit)}
+          disabled={isLoading}
+          activeOpacity={0.7}
         >
-          <Text style={styles.buttonText}>{isSignUp ? 'Create Account' : 'Sign In'}</Text>
+          <Text style={styles.buttonText}>
+            {isLoading ? 'Loading...' : (isSignUp ? 'Create Account' : 'Sign In')}
+          </Text>
         </TouchableOpacity>
 
         {/* Toggle Button */}
         <TouchableOpacity
           style={styles.toggleButton}
           onPress={() => {
-            reset();
-            setIsSignUp(!isSignUp);
+            if (!isLoading) {
+              reset();
+              setIsSignUp(!isSignUp);
+            }
           }}
+          disabled={isLoading}
+          activeOpacity={0.7}
         >
           <Text style={styles.toggleButtonText}>
             {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Register"}
@@ -185,6 +271,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 8,
     marginBottom: 16,
+  },
+  buttonDisabled: {
+    backgroundColor: '#a0a0a0',
+    opacity: 0.6,
   },
   buttonText: {
     color: '#ffffff',

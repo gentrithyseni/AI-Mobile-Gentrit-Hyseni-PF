@@ -7,4 +7,11 @@ https://github.com/gentrithyseni/AI-Mobile-Gentrit-Hyseni-PF/
 supabase projekt https://supabase.com/dashboard/project/iihlrviuvpyzjcjxuphz
 ne .env eshte edhe anon key,tash cka me bo
 3.e krijova tabelat ne supabase, por po del error 42883 si ky :Error: Failed to run sql query: ERROR: 42883: operator does not exist: uuid = text HINT: No operator matches the given name and argument types. You might need to add explicit type casts.
-
+4.Ndegjo,ndryshoje loginscreen,beje me background ngjyre te bardhe,opsionet ose buttonat me ngjyre te gjelber
+si ngjyre pylli,peme,mali. Beje qe nese don me bo sign in pra me u regjistru me e shkrujt passwordin dy here.tani kur te krijohet llogaria te behet redirect ose te kthehesh tek faqja kryesore per te bere log in.
+5.nuk po lejon as me bo login sepse kur pe klikoj buttonin spo bon sen,as kur po e krijoj llogarine,nuk po bon kurgjo veq po rrin
+ne console f12 - POST entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.routerRoot=app&transform.reactCompiler=true:153114 POST https://iihlrviuvpyzjcjxuphz.supabase.co/rest/v1/profiles?select=* 401 (Unauthorized)
+6.Cka jane keto create index transactions ...
+7.i shtova, por CRUD nuk po funksionon per transaksionet,me shtu po lejon,por me i fshi edhe me i ndryshu spo lejon,krijo cka duhet qe te mund te fshij dhe ndryshoj transaksionet
+8.RLS policy ne supabase kane disa probleme me CRUD,shikoji edhe njehere
+9.ne android,pra ne telefon po punon perfekt cdo gje,me login ,me error psh password gabim,me password match gjate krijimit te accountit,me delete te transaksioneve,kurse ne web jo dhe aq
