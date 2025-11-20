@@ -16,95 +16,160 @@ async function ensureProfileExists(user) {
   }
 }
 
+// Session timeout: 24 hours (86400 seconds)
+const SESSION_TIMEOUT = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
+    let subscription = null;
+    let sessionCheckInterval = null;
 
     const getUser = async () => {
       try {
         // Check if there's a valid session
         const { data: { session }, error } = await supabaseClient.auth.getSession();
         
-        if (mounted) {
-          if (error) {
-            console.log('[auth] Session check error:', error);
-            // If there's an error getting session (e.g., server down), sign out
-            await supabaseClient.auth.signOut();
-            setUser(null);
-            setLoading(false);
-            return;
-          }
+        if (!mounted) return;
 
-          const u = session?.user ?? null;
-          
-          // If no session or session is expired, ensure user is signed out
-          // This happens when server restarts or session is lost
-          if (!session || !u) {
-            console.log('[auth] No valid session found (server may have restarted), signing out');
+        if (error) {
+          console.log('[auth] Session check error:', error);
+          // Only sign out on critical errors, not network errors
+          if (error.message?.includes('Invalid') || error.message?.includes('expired')) {
             await supabaseClient.auth.signOut();
-            setUser(null);
-            setLoading(false);
-            return;
           }
-
-          // Verify session is still valid by checking token
-          const now = Math.floor(Date.now() / 1000);
-          if (session.expires_at && session.expires_at < now) {
-            console.log('[auth] Session expired, signing out');
-            await supabaseClient.auth.signOut();
-            setUser(null);
-            setLoading(false);
-            return;
-          }
-
-          setUser(u);
+          setUser(null);
           setLoading(false);
-          if (u) await ensureProfileExists(u);
+          return;
         }
+
+        const u = session?.user ?? null;
+        
+        // If no session, user is signed out (but don't force sign out)
+        if (!session || !u) {
+          console.log('[auth] No valid session found');
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+
+        // Check if session has expired based on custom timeout (24 hours)
+        const sessionCreatedAt = session.user.created_at 
+          ? new Date(session.user.created_at).getTime() 
+          : Date.now();
+        const now = Date.now();
+        const sessionAge = now - sessionCreatedAt;
+
+        if (sessionAge > SESSION_TIMEOUT) {
+          console.log('[auth] Session expired (24 hours), signing out');
+          await supabaseClient.auth.signOut();
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+
+        // Verify session token is still valid (Supabase's own expiration)
+        const nowSeconds = Math.floor(now / 1000);
+        if (session.expires_at && session.expires_at < nowSeconds) {
+          console.log('[auth] Session token expired, signing out');
+          await supabaseClient.auth.signOut();
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+
+        // Session is valid
+        console.log('[auth] Valid session found, user logged in');
+        setUser(u);
+        setLoading(false);
+        if (u) await ensureProfileExists(u);
       } catch (e) {
-        console.error('[auth] Exception getting session (server may be down):', e);
+        console.error('[auth] Exception getting session:', e);
         if (mounted) {
-          // On any error (network, server down, etc.), sign out to be safe
-          try {
-            await supabaseClient.auth.signOut();
-          } catch (signOutError) {
-            console.error('[auth] Error during sign out:', signOutError);
-          }
+          // Don't sign out on network errors, just clear local state temporarily
           setUser(null);
           setLoading(false);
         }
       }
     };
+
+    // Initial session check
     getUser();
 
-    const { subscription } = supabaseClient.auth.onAuthStateChange(async (event, session) => {
-      console.log('[auth] Auth state changed:', event, session ? 'has session' : 'no session');
-      
-      if (mounted) {
+    // Set up auth state change listener
+    try {
+      subscription = supabaseClient.auth.onAuthStateChange(async (event, session) => {
+        if (!mounted) return;
+        
+        console.log('[auth] Auth state changed:', event, session ? 'has session' : 'no session');
+        
         const u = session?.user ?? null;
         
         // Handle different auth events
-        if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED' && !session) {
+        if (event === 'SIGNED_OUT') {
           setUser(null);
-        } else if (u) {
-          setUser(u);
-          await ensureProfileExists(u);
-        } else {
-          // No user in session, ensure signed out
+        } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          if (u) {
+            setUser(u);
+            await ensureProfileExists(u);
+          }
+        } else if (!u) {
+          // No user in session
           setUser(null);
         }
-      }
-    });
+      });
+    } catch (e) {
+      console.error('[auth] Error setting up auth state listener:', e);
+    }
 
-    // Cleanup: sign out when component unmounts (e.g., server stops)
+    // Check session validity periodically (every 5 minutes)
+    sessionCheckInterval = setInterval(() => {
+      if (!mounted) return;
+      
+      supabaseClient.auth.getSession().then(({ data: { session }, error }) => {
+        if (!mounted) return;
+        
+        if (error || !session?.user) {
+          return;
+        }
+
+        // Check if session expired
+        const now = Date.now();
+        const sessionCreatedAt = session.user.created_at 
+          ? new Date(session.user.created_at).getTime() 
+          : Date.now();
+        const sessionAge = now - sessionCreatedAt;
+
+        if (sessionAge > SESSION_TIMEOUT) {
+          console.log('[auth] Session expired during periodic check, signing out');
+          supabaseClient.auth.signOut();
+          setUser(null);
+        }
+      }).catch((e) => {
+        console.error('[auth] Error in periodic session check:', e);
+      });
+    }, 5 * 60 * 1000); // Check every 5 minutes
+
+    // Cleanup function
     return () => {
       mounted = false;
-      subscription.unsubscribe();
-      // Optional: sign out on unmount if you want strict session management
-      // supabaseClient.auth.signOut();
+      
+      // Safely unsubscribe from auth state changes
+      if (subscription?.unsubscribe) {
+        try {
+          subscription.unsubscribe();
+        } catch (e) {
+          console.error('[auth] Error unsubscribing:', e);
+        }
+      }
+      
+      // Clear interval
+      if (sessionCheckInterval) {
+        clearInterval(sessionCheckInterval);
+      }
     };
   }, []);
 

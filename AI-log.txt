@@ -18,3 +18,5 @@ ne console f12 - POST entry.bundle?platform=web&dev=true&hot=false&lazy=true&tra
 10.Fix web compatibility: delete transactions and error messages now work on web platform"
 11.Pse po dalin kjo posht HOME dhe EXPLORE,a mundesh me i fshi ?
 12.beje autentifikimin me session,dmth nese hi njehere dhe psh e ndali serverin une ctrl + c,te behet sign out,shko me logjike
+13.Kur ristartohet aplikacioni,mos e bej sign out,po bone me kohe psh sesionin,nese nuk ndalet serveri ose nuk e boj sign out buttonin,me qene me minuta ose me ore ose qysh mendon ti sa minuta ore duhet me qene,nese e ndali serverin ose bejn sign out vet normal me bo sign out ,edhe met qit jashte.
+14.
