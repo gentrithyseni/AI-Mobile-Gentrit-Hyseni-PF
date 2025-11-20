@@ -34,7 +34,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
       router.replace('/login');
     }
 
-    // if user is authenticated and on /login, send to the tabs
+    // if user is authenticated and on /login, send to the home screen
     if (user && onLoginRoute) {
       console.log('[AuthGate] User authenticated, redirecting to /(tabs)');
       router.replace('/(tabs)');

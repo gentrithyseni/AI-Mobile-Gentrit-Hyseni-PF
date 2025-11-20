@@ -15,3 +15,6 @@ ne console f12 - POST entry.bundle?platform=web&dev=true&hot=false&lazy=true&tra
 7.i shtova, por CRUD nuk po funksionon per transaksionet,me shtu po lejon,por me i fshi edhe me i ndryshu spo lejon,krijo cka duhet qe te mund te fshij dhe ndryshoj transaksionet
 8.RLS policy ne supabase kane disa probleme me CRUD,shikoji edhe njehere
 9.ne android,pra ne telefon po punon perfekt cdo gje,me login ,me error psh password gabim,me password match gjate krijimit te accountit,me delete te transaksioneve,kurse ne web jo dhe aq
+10.Fix web compatibility: delete transactions and error messages now work on web platform"
+11.Pse po dalin kjo posht HOME dhe EXPLORE,a mundesh me i fshi ?
+12.beje autentifikimin me session,dmth nese hi njehere dhe psh e ndali serverin une ctrl + c,te behet sign out,shko me logjike

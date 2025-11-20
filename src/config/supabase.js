@@ -41,7 +41,18 @@ if (!isValidUrl(SUPABASE_URL) || !SUPABASE_ANON_KEY) {
 		}),
 	};
 } else {
-	supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+	// Configure Supabase to use session-based auth (not persistent storage)
+	// This means session will be lost when app/server restarts
+	supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+		auth: {
+			// Don't persist session to storage - use memory only
+			persistSession: false,
+			// Don't auto refresh tokens
+			autoRefreshToken: false,
+			// Detect session changes
+			detectSessionInUrl: false,
+		},
+	});
 }
 
 export { supabase };
