@@ -1,4 +1,4 @@
-const GEMINI_API_KEY = "AIzaSyDQ4gQpbr-5lyB8SsG2_5jh21VQ8N5HOZo"; 
+const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
 
 function getFallbackAdvice() {
   const tips = [
