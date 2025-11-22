@@ -1,21 +1,17 @@
+import { Wallet } from 'lucide-react-native'; // Sigurohu qe ke instaluar lucide-react-native
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, Platform } from 'react-native';
-import { useForm, Controller } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
+import { ActivityIndicator, Alert, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 
-const FOREST_GREEN = '#2d5016';
+// Ngjyra e re "Blue Theme"
+const PRIMARY_BLUE = '#2563EB';
+const BG_COLOR = '#F3F4F6';
 
-// Helper function to show alerts that work on both web and mobile
 const showAlert = (title, message) => {
   if (Platform.OS === 'web') {
-    // On web, use window.alert which actually shows a dialog
-    if (typeof window !== 'undefined' && window.alert) {
-      window.alert(`${title}\n\n${message}`);
-    } else {
-      console.error(`[Alert] ${title}: ${message}`);
-    }
+    if (typeof window !== 'undefined' && window.alert) window.alert(`${title}\n\n${message}`);
   } else {
-    // On mobile, use React Native Alert
     Alert.alert(title, message);
   }
 };
@@ -29,265 +25,164 @@ export default function LoginScreen({ navigation }) {
   });
 
   const onSignInSubmit = async (values) => {
-    // Validation
-    if (!values.email.trim()) {
-      showAlert('Error', 'Email is required');
-      return;
-    }
-    if (!values.password.trim()) {
-      showAlert('Error', 'Password is required');
-      return;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
-      showAlert('Error', 'Please enter a valid email');
-      return;
-    }
-
     setIsLoading(true);
     try {
-      console.log('[login] Signing in with:', values.email);
       const res = await signIn({ email: values.email, password: values.password });
-      console.log('[login] signIn response:', res);
-      
-      if (res.error) {
-        console.error('[login] Error:', res.error);
-        const errorMessage = res.error.message || 'Login failed. Check your email and password.';
-        showAlert('Sign In Failed', errorMessage);
-      } else {
-        console.log('[login] Successfully signed in');
-        showAlert('Success', 'Signed in successfully!');
-      }
+      if (res.error) showAlert('Gabim', res.error.message);
     } catch (e) {
-      console.error('[login] Exception:', e);
-      const errorMessage = e instanceof Error ? e.message : 'An error occurred during sign in';
-      showAlert('Error', errorMessage);
+      showAlert('Gabim', e.message);
     } finally {
       setIsLoading(false);
     }
   };
 
   const onSignUpSubmit = async (values) => {
-    // Validation
-    if (!values.email.trim()) {
-      showAlert('Error', 'Email is required');
-      return;
-    }
-    if (!values.username.trim()) {
-      showAlert('Error', 'Username is required');
-      return;
-    }
-    if (!values.password.trim()) {
-      showAlert('Error', 'Password is required');
-      return;
-    }
-    if (values.password.length < 6) {
-      showAlert('Error', 'Password must be at least 6 characters');
-      return;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
-      showAlert('Error', 'Please enter a valid email');
-      return;
-    }
     if (values.password !== values.passwordConfirm) {
-      showAlert('Error', 'Passwords do not match');
+      showAlert('Gabim', 'Fjalëkalimet nuk përputhen');
       return;
     }
-
     setIsLoading(true);
     try {
-      console.log('[login] Signing up with:', values.email);
       const res = await signUp({ email: values.email, password: values.password, username: values.username });
-      console.log('[login] signUp response:', res);
-      
       if (res.error) {
-        console.error('[login] Error:', res.error);
-        const errorMessage = res.error.message || 'Registration failed. Try another email.';
-        showAlert('Sign Up Failed', errorMessage);
+        showAlert('Gabim', res.error.message);
       } else {
-        console.log('[login] Successfully signed up');
-        if (Platform.OS === 'web') {
-          window.alert('Success\n\nAccount created! Please sign in now.');
-          reset();
-          setIsSignUp(false);
-        } else {
-          Alert.alert('Success', 'Account created! Please sign in now.', [
-            {
-              text: 'OK',
-              onPress: () => {
-                reset();
-                setIsSignUp(false);
-              },
-            },
-          ]);
-        }
+        showAlert('Sukses', 'Llogaria u krijua! Tani mund të hyni.');
+        reset();
+        setIsSignUp(false);
       }
     } catch (e) {
-      console.error('[login] Exception:', e);
-      const errorMessage = e instanceof Error ? e.message : 'An error occurred during sign up';
-      showAlert('Error', errorMessage);
+      showAlert('Gabim', e.message);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.innerContainer}>
-        <Text style={styles.title}>{isSignUp ? 'Create Account' : 'Sign In'}</Text>
-
-        {/* Email Input */}
-        <Controller
-          control={control}
-          name="email"
-          render={({ field: { onChange, value } }) => (
-            <TextInput
-              style={styles.input}
-              placeholder="Email"
-              placeholderTextColor="#999"
-              value={value}
-              onChangeText={onChange}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-          )}
-        />
-
-        {/* Username Input (Sign Up Only) */}
-        {isSignUp && (
-          <Controller
-            control={control}
-            name="username"
-            render={({ field: { onChange, value } }) => (
-              <TextInput
-                style={styles.input}
-                placeholder="Username"
-                placeholderTextColor="#999"
-                value={value}
-                onChangeText={onChange}
-                autoCapitalize="none"
-              />
-            )}
-          />
-        )}
-
-        {/* Password Input */}
-        <Controller
-          control={control}
-          name="password"
-          render={({ field: { onChange, value } }) => (
-            <TextInput
-              style={styles.input}
-              placeholder="Password"
-              placeholderTextColor="#999"
-              secureTextEntry
-              value={value}
-              onChangeText={onChange}
-            />
-          )}
-        />
-
-        {/* Password Confirmation (Sign Up Only) */}
-        {isSignUp && (
-          <Controller
-            control={control}
-            name="passwordConfirm"
-            render={({ field: { onChange, value } }) => (
-              <TextInput
-                style={styles.input}
-                placeholder="Confirm Password"
-                placeholderTextColor="#999"
-                secureTextEntry
-                value={value}
-                onChangeText={onChange}
-              />
-            )}
-          />
-        )}
-
-        {/* Primary Button */}
-        <TouchableOpacity
-          style={[styles.button, isLoading && styles.buttonDisabled]}
-          onPress={handleSubmit(isSignUp ? onSignUpSubmit : onSignInSubmit)}
-          disabled={isLoading}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.buttonText}>
-            {isLoading ? 'Loading...' : (isSignUp ? 'Create Account' : 'Sign In')}
-          </Text>
-        </TouchableOpacity>
-
-        {/* Toggle Button */}
-        <TouchableOpacity
-          style={styles.toggleButton}
-          onPress={() => {
-            if (!isLoading) {
-              reset();
-              setIsSignUp(!isSignUp);
-            }
-          }}
-          disabled={isLoading}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.toggleButtonText}>
-            {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Register"}
-          </Text>
-        </TouchableOpacity>
+    <View style={styles.container}>
+      <View style={styles.headerBackground}>
+        <View style={styles.iconContainer}>
+            <Wallet size={40} color="white" />
+        </View>
       </View>
-    </ScrollView>
+      
+      <View style={styles.cardContainer}>
+        <Text style={styles.title}>{isSignUp ? 'Krijo Llogari' : 'Mirësevini'}</Text>
+        <Text style={styles.subtitle}>Menaxho financat tua me inteligjencë.</Text>
+
+        {/* Form Inputs */}
+        <View style={styles.form}>
+           {isSignUp && (
+            <Controller
+              control={control}
+              name="username"
+              render={({ field: { onChange, value } }) => (
+                <TextInput style={styles.input} placeholder="Emri i përdoruesit" value={value} onChangeText={onChange} placeholderTextColor="#9CA3AF" />
+              )}
+            />
+          )}
+
+          <Controller
+            control={control}
+            name="email"
+            render={({ field: { onChange, value } }) => (
+              <TextInput style={styles.input} placeholder="Email" value={value} onChangeText={onChange} keyboardType="email-address" autoCapitalize="none" placeholderTextColor="#9CA3AF" />
+            )}
+          />
+
+          <Controller
+            control={control}
+            name="password"
+            render={({ field: { onChange, value } }) => (
+              <TextInput style={styles.input} placeholder="Fjalëkalimi" value={value} onChangeText={onChange} secureTextEntry placeholderTextColor="#9CA3AF" />
+            )}
+          />
+
+          {isSignUp && (
+            <Controller
+              control={control}
+              name="passwordConfirm"
+              render={({ field: { onChange, value } }) => (
+                <TextInput style={styles.input} placeholder="Konfirmo Fjalëkalimin" value={value} onChangeText={onChange} secureTextEntry placeholderTextColor="#9CA3AF" />
+              )}
+            />
+          )}
+
+          <TouchableOpacity
+            style={styles.button}
+            onPress={handleSubmit(isSignUp ? onSignUpSubmit : onSignInSubmit)}
+            disabled={isLoading}
+          >
+            {isLoading ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>{isSignUp ? 'Regjistrohuni' : 'Hyni'}</Text>}
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={() => { reset(); setIsSignUp(!isSignUp); }} style={styles.toggleButton}>
+            <Text style={styles.toggleButtonText}>
+              {isSignUp ? 'Keni llogari? Hyni këtu' : 'Nuk keni llogari? Regjistrohuni'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#ffffff',
+  container: { flex: 1, backgroundColor: '#EFF6FF' },
+  headerBackground: {
+    height: '35%',
+    backgroundColor: PRIMARY_BLUE,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
     justifyContent: 'center',
-    padding: 16,
+    alignItems: 'center',
   },
-  innerContainer: {
-    width: '100%',
+  iconContainer: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    padding: 20,
+    borderRadius: 25,
+    marginBottom: 20,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 24,
-    textAlign: 'center',
-    color: FOREST_GREEN,
+  cardContainer: {
+    flex: 1,
+    backgroundColor: 'white',
+    marginHorizontal: 20,
+    marginTop: -50,
+    borderRadius: 20,
+    padding: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
+    marginBottom: 30,
   },
+  title: { fontSize: 24, fontWeight: 'bold', textAlign: 'center', color: '#1F2937', marginBottom: 8 },
+  subtitle: { fontSize: 14, textAlign: 'center', color: '#6B7280', marginBottom: 32 },
+  form: { width: '100%' },
   input: {
+    backgroundColor: '#F9FAFB',
     borderWidth: 1,
-    borderColor: '#ddd',
-    backgroundColor: '#f9f9f9',
-    padding: 12,
+    borderColor: '#E5E7EB',
+    padding: 16,
+    borderRadius: 12,
     marginBottom: 16,
-    borderRadius: 8,
-    fontSize: 16,
-    color: '#333',
+    fontSize: 15,
+    color: '#374151'
   },
   button: {
-    backgroundColor: FOREST_GREEN,
-    paddingVertical: 14,
-    borderRadius: 8,
+    backgroundColor: PRIMARY_BLUE,
+    paddingVertical: 16,
+    borderRadius: 12,
     alignItems: 'center',
     marginTop: 8,
-    marginBottom: 16,
+    shadowColor: PRIMARY_BLUE,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  buttonDisabled: {
-    backgroundColor: '#a0a0a0',
-    opacity: 0.6,
-  },
-  buttonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  toggleButton: {
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  toggleButtonText: {
-    color: FOREST_GREEN,
-    fontSize: 14,
-    textDecorationLine: 'underline',
-  },
+  buttonText: { color: 'white', fontSize: 16, fontWeight: '600' },
+  toggleButton: { marginTop: 20, alignItems: 'center' },
+  toggleButtonText: { color: PRIMARY_BLUE, fontWeight: '500' },
 });
