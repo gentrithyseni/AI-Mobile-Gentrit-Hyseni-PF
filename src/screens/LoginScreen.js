@@ -1,12 +1,9 @@
-import { Wallet } from 'lucide-react-native'; // Sigurohu qe ke instaluar lucide-react-native
+import { Moon, Sun, Wallet } from 'lucide-react-native'; // Sigurohu qe ke instaluar lucide-react-native
 import React, { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { ActivityIndicator, Alert, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
-
-// Ngjyra e re "Blue Theme"
-const PRIMARY_BLUE = '#2563EB';
-const BG_COLOR = '#F3F4F6';
+import { useTheme } from '../contexts/ThemeContext';
 
 const showAlert = (title, message) => {
   if (Platform.OS === 'web') {
@@ -18,6 +15,7 @@ const showAlert = (title, message) => {
 
 export default function LoginScreen({ navigation }) {
   const { signIn, signUp } = useAuth();
+  const { colors, isDarkMode, toggleTheme } = useTheme();
   const [isSignUp, setIsSignUp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { control, handleSubmit, reset } = useForm({
@@ -59,16 +57,31 @@ export default function LoginScreen({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.headerBackground}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.headerBackground, { backgroundColor: colors.primary }]}>
+        <TouchableOpacity 
+            onPress={toggleTheme} 
+            style={{ 
+                position: 'absolute', 
+                top: 50, 
+                right: 20, 
+                padding: 8, 
+                backgroundColor: 'rgba(255,255,255,0.2)', 
+                borderRadius: 20,
+                zIndex: 10
+            }}
+        >
+            {isDarkMode ? <Sun size={24} color="white" /> : <Moon size={24} color="white" />}
+        </TouchableOpacity>
+
         <View style={styles.iconContainer}>
             <Wallet size={40} color="white" />
         </View>
       </View>
       
-      <View style={styles.cardContainer}>
-        <Text style={styles.title}>{isSignUp ? 'Krijo Llogari' : 'Mirë se vini'}</Text>
-        <Text style={styles.subtitle}>Menaxho financat tuaja me inteligjencë.</Text>
+      <View style={[styles.cardContainer, { backgroundColor: colors.card }]}>
+        <Text style={[styles.title, { color: colors.text }]}>{isSignUp ? 'Krijo Llogari' : 'Mirë se vini'}</Text>
+        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Menaxho financat tuaja me inteligjencë.</Text>
 
         {/* Form Inputs */}
         <View style={styles.form}>
@@ -77,7 +90,13 @@ export default function LoginScreen({ navigation }) {
               control={control}
               name="username"
               render={({ field: { onChange, value } }) => (
-                <TextInput style={styles.input} placeholder="Emri i përdoruesit" value={value} onChangeText={onChange} placeholderTextColor="#9CA3AF" />
+                <TextInput 
+                  style={[styles.input, { backgroundColor: colors.inputBackground, borderColor: colors.border, color: colors.text }]} 
+                  placeholder="Emri i përdoruesit" 
+                  value={value} 
+                  onChangeText={onChange} 
+                  placeholderTextColor={colors.textSecondary} 
+                />
               )}
             />
           )}
@@ -86,7 +105,15 @@ export default function LoginScreen({ navigation }) {
             control={control}
             name="email"
             render={({ field: { onChange, value } }) => (
-              <TextInput style={styles.input} placeholder="Email" value={value} onChangeText={onChange} keyboardType="email-address" autoCapitalize="none" placeholderTextColor="#9CA3AF" />
+              <TextInput 
+                style={[styles.input, { backgroundColor: colors.inputBackground, borderColor: colors.border, color: colors.text }]} 
+                placeholder="Email" 
+                value={value} 
+                onChangeText={onChange} 
+                keyboardType="email-address" 
+                autoCapitalize="none" 
+                placeholderTextColor={colors.textSecondary} 
+              />
             )}
           />
 
@@ -94,7 +121,14 @@ export default function LoginScreen({ navigation }) {
             control={control}
             name="password"
             render={({ field: { onChange, value } }) => (
-              <TextInput style={styles.input} placeholder="Fjalëkalimi" value={value} onChangeText={onChange} secureTextEntry placeholderTextColor="#9CA3AF" />
+              <TextInput 
+                style={[styles.input, { backgroundColor: colors.inputBackground, borderColor: colors.border, color: colors.text }]} 
+                placeholder="Fjalëkalimi" 
+                value={value} 
+                onChangeText={onChange} 
+                secureTextEntry 
+                placeholderTextColor={colors.textSecondary} 
+              />
             )}
           />
 
@@ -103,13 +137,20 @@ export default function LoginScreen({ navigation }) {
               control={control}
               name="passwordConfirm"
               render={({ field: { onChange, value } }) => (
-                <TextInput style={styles.input} placeholder="Konfirmo Fjalëkalimin" value={value} onChangeText={onChange} secureTextEntry placeholderTextColor="#9CA3AF" />
+                <TextInput 
+                  style={[styles.input, { backgroundColor: colors.inputBackground, borderColor: colors.border, color: colors.text }]} 
+                  placeholder="Konfirmo Fjalëkalimin" 
+                  value={value} 
+                  onChangeText={onChange} 
+                  secureTextEntry 
+                  placeholderTextColor={colors.textSecondary} 
+                />
               )}
             />
           )}
 
           <TouchableOpacity
-            style={styles.button}
+            style={[styles.button, { backgroundColor: colors.primary, shadowColor: colors.primary }]}
             onPress={handleSubmit(isSignUp ? onSignUpSubmit : onSignInSubmit)}
             disabled={isLoading}
           >
@@ -117,7 +158,7 @@ export default function LoginScreen({ navigation }) {
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => { reset(); setIsSignUp(!isSignUp); }} style={styles.toggleButton}>
-            <Text style={styles.toggleButtonText}>
+            <Text style={[styles.toggleButtonText, { color: colors.primary }]}>
               {isSignUp ? 'Keni llogari? Hyni këtu' : 'Nuk keni llogari? Regjistrohuni'}
             </Text>
           </TouchableOpacity>
@@ -128,10 +169,9 @@ export default function LoginScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#EFF6FF' },
+  container: { flex: 1 },
   headerBackground: {
     height: '35%',
-    backgroundColor: PRIMARY_BLUE,
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
     justifyContent: 'center',
@@ -145,7 +185,6 @@ const styles = StyleSheet.create({
   },
   cardContainer: {
     flex: 1,
-    backgroundColor: 'white',
     marginHorizontal: 20,
     marginTop: -50,
     borderRadius: 20,
@@ -157,26 +196,21 @@ const styles = StyleSheet.create({
     elevation: 5,
     marginBottom: 30,
   },
-  title: { fontSize: 24, fontWeight: 'bold', textAlign: 'center', color: '#1F2937', marginBottom: 8 },
-  subtitle: { fontSize: 14, textAlign: 'center', color: '#6B7280', marginBottom: 32 },
+  title: { fontSize: 24, fontWeight: 'bold', textAlign: 'center', marginBottom: 8 },
+  subtitle: { fontSize: 14, textAlign: 'center', marginBottom: 32 },
   form: { width: '100%' },
   input: {
-    backgroundColor: '#F9FAFB',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
     padding: 16,
     borderRadius: 12,
     marginBottom: 16,
     fontSize: 15,
-    color: '#374151'
   },
   button: {
-    backgroundColor: PRIMARY_BLUE,
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
     marginTop: 8,
-    shadowColor: PRIMARY_BLUE,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -184,5 +218,5 @@ const styles = StyleSheet.create({
   },
   buttonText: { color: 'white', fontSize: 16, fontWeight: '600' },
   toggleButton: { marginTop: 20, alignItems: 'center' },
-  toggleButtonText: { color: PRIMARY_BLUE, fontWeight: '500' },
+  toggleButtonText: { fontWeight: '500' },
 });

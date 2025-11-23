@@ -28,7 +28,7 @@ export const darkTheme = {
     card: '#1F2937',       // Dark gray
     text: '#F9FAFB',       // Almost white
     textSecondary: '#9CA3AF', // Light gray
-    primary: '#3B82F6',    // Lighter blue for contrast
+    primary: '#64748B',    // Slate Grey (Blue-ish Grey) for Dark Mode
     border: '#374151',     // Darker border
     inputBackground: '#374151',
     success: '#34D399',

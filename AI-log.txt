@@ -139,5 +139,10 @@ ne telefon eshte me mire,me lejoj me ndryshu profilin foton.
 vetem duhet qe buttoni sign out te jete edhe tek faqja raporte edhe tek profili ,njejte si ne home screen ne anen e djathe lart,
 32.jojo leje edhe ate ku ka qene,me pelqen ashtu ai button sign out.
 33.a mundesh me e shtu nje button vetem tek homescreen,per dark mode on/off.Pershtati ngjyrat psh keto qe jane te jete light mode ose dark mode off,dark mode on te kete ngjyra siq e mendon ti.Normal pasi te aplikohet psh dark mode,ajo te shfaqet edhe tek pamjet tjera psh kur shtohet nje transaksion ose tek profili ose tek raportet,perveq tek login.
-34.
-35.
+34.shume shume mire u dal,por tash ne dark mode bone qe psh kjo e kalterta qe eshte per transaksione,me u bo si e hinte ose naj ngjyre qe pershtatet me dark mode,edhe qe dallohet pak,po ashtu implementoj keto edhe ne login screen,krejt
+35.mire por duhet te duket buttoni edhe ne loginscreen qe te mund ta bej on off dark mode
+36.
+37.
+38.
+39.
+40.
