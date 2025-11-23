@@ -66,6 +66,20 @@ export default function AddTransactionScreen({ navigation, route }) {
   };
 
   const handleDelete = async () => {
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm("A jeni i sigurt që doni ta fshini këtë transaksion?");
+      if (confirmed) {
+        try {
+          await deleteTransaction(transactionToEdit.id);
+          navigation.goBack();
+        } catch (e) {
+          console.error(e);
+          alert("Gabim gjatë fshirjes: " + e.message);
+        }
+      }
+      return;
+    }
+
     Alert.alert(
       "Fshij Transaksionin",
       "A jeni i sigurt?",

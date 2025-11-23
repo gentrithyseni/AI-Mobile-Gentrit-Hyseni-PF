@@ -19,4 +19,125 @@ ne console f12 - POST entry.bundle?platform=web&dev=true&hot=false&lazy=true&tra
 11.Pse po dalin kjo posht HOME dhe EXPLORE,a mundesh me i fshi ?
 12.beje autentifikimin me session,dmth nese hi njehere dhe psh e ndali serverin une ctrl + c,te behet sign out,shko me logjike
 13.Kur ristartohet aplikacioni,mos e bej sign out,po bone me kohe psh sesionin,nese nuk ndalet serveri ose nuk e boj sign out buttonin,me qene me minuta ose me ore ose qysh mendon ti sa minuta ore duhet me qene,nese e ndali serverin ose bejn sign out vet normal me bo sign out ,edhe met qit jashte.
-14.
+14.Ndegjo,me duhet te krijoj nje aplikacion mobil me React Native. .Personal Finance Tracker with budgets (Supabase: transactions{id, amount, category, user_id}) — (Available)
+React Native + Expo Snack: Implemento formular me react-hook-form, vizualizo shpenzimet me grafikë VictoryPie dhe filtro transaksionet duke pyetur Supabase.
+Aplikacioni duhet te kete faqen login ku useri behet login me kredencialet e tij ,verifikohen dhe lejohet aksesi.Po ashtu faqja login duhet te kete sign up ,ku duhet te kete password match per krijim te llogarise.
+Faqja kryesore ku pasi te hysh ne aplikacion,ne fillim larte te shfaqet buxheti/bilanci aktual bashke me shumen e shpenzimeve dhe shumen e te ardhurave,pastaj transaksionet si liste, mes ketyre dyve te jete nje AI FInancial Insight qe jep keshilla financiare ku me shpenzu,ku me kurse etj, qe vjen prej Gemini ,si API ose najsen. Poshte aplikacioni te kete nje meny ku useri mundet te shtoj transaksione dhe pastaj zgjedh a shpenzim a te ardhur(income/expense), te kete profile ku mund te ndryshoj profilin(emrin,foton,etij),te kete raports ku shfaqen grafika me charts per transaksionet,dmth meny me tre gjera(add,reports,profile).Secili transaksion kur te
+klikohet te kete mundesine te ndryshohet ,dmth data,shuma,pershkrimi etj.
+15.tek login,kur po du me shkru,po lejon vetem nga nje shkronje ,haha pse ?
+16.ne home screen dmth kur po hi pasi bera login,po del faqja e vjeter,ku me lejoj edhe me shtu transaksion.
+sa per info ne supabase kam dy tabela profile edhe transcations
+17.e provova edhe ne telefon me expo go,login perfekt,pas login shfaqet faqja e vjeter me te gjelber,package.json ka kete kod ...
+18.ne web qikjo po del per 1 sekond,edhe loading edhe spo hapet,ne telefon eshte mire deri dikun.
+19.[auth] Session created successfully;LOG  Gemini u bllokua (Plan B): API key not valid. Please pass a valid API key.
+20.ose vetem beje qe te jep keshilla cdo 30 sekonda per financa,kursime etj sepse tash po thote Gemini Error (Plan B): Gemini API free tier is not available in your country. Please enable billing on your project in Google AI Studio.
+u ndreq edhe transaksionet ku muj me shtu edhe shpenzime edhe te ardhura,por duhet tash edhe me ndreq CRUD,pra me i ndryshu ose me i fshi.
+po ashtu tek foto me lart ,po e sheh se ajo lart tek bilanci edhe te ardhurat shfaqja e tyre ,pra qe eshte me te kalter po e bllokon pak shfaqjen e ketij gemini,ose zvogelo pak ose shtyje pakez me poshte kete gemini ai insight,edhe ne supabase po shtohen transaksionet,all good vetem perfundoj keto detyrat me larte
+21.krijo nje button lart ne te djathte,qe me bo sign out,beje si dere ose najsen qe me dal jasht,te jete ne format si faqja najsen me te kalter ose naj ngjyre me u pershtat me faqen.
+22.jojo buttoni per sign out duhet me qene ne home screen jo ne addtransaction,edhe te jete ne pjesen e djathte anash dmth
+23.ERROR The action 'REPLACE' with payload {"name":"Login"} was not handled by any navigator.Do you have a screen named 'Login'?
+If you're trying to navigate to a screen in a nested navigator, see https://reactnavigation.org/docs/nesting-navigators#navigating-to-a-screen-in-a-nested-navigator. mire eshte por ne telefon dul kjo
+24.tek Transaksionet e fundit qe eshte Shto+,te jete edhe shiko te gjitha transaksionet,ku shfaqen te gjitha transaksionet.
+Pastja te shtohet qe cdo transaksion te kete daten kur eshte krijuar,pra kur shtohet te shtohet data aktuale ,dhe kur shikohet transaksionet psh tek lista e tyre te shfaqet edhe data.Po ashtu raportet financiare te krijojne dhe lloje te tjera te grafikave,dhe po ashtu tek perqindja qe shfaqet psh Ushqim(36%, te jete edhe cmimi psh Ushqim (36%, 80 euro etj).
+Pastaj tek profili te lejohet te shtohet te dhena si emri mbiemri,e-mail te jete ajo me te cilen bejme sign in,gjinia,ditelindja,etj.
+Me vone duhet qe te lejohet edhe te behet upload i fotove ne profil psh,sepse profesori kerkon kete kerkese,edhe te lidhet me databazen e supabase -storage te saj.Vazhdo me keto pastaj shohim cka po funksionon e cka jo.Faleminderit.
+25.Ne supabase paska keto warning edhe performance problems, po i renditi
+    1.Auth RLS Initialization Plan
+    Warning
+    Entity
+    public.profiles
+    Issue
+    Table public.profiles has a row level security policy Profiles: select for logged in that re-evaluates current_setting() or auth.<function>() for each row. This produces suboptimal query performance at scale. Resolve the issue by replacing auth.<function>() with (select auth.<function>()). See docs for more info.
+    Description
+    Detects if calls to current_setting() and auth.<function>() in RLS policies are being unnecessarily re-evaluated for each row
+    2.Issue
+    Table public.profiles has a row level security policy Profiles: insert that re-evaluates current_setting() or auth.<function>() for each row. This produces suboptimal query performance at scale. Resolve the issue by replacing auth.<function>() with (select auth.<function>()). See docs for more info.
+    Description
+    Detects if calls to current_setting() and auth.<function>() in RLS policies are being unnecessarily re-evaluated for each row
+    3.Issue
+    Table public.profiles has a row level security policy Profiles: update own that re-evaluates current_setting() or auth.<function>() for each row. This produces suboptimal query performance at scale. Resolve the issue by replacing auth.<function>() with (select auth.<function>()). See docs for more info.
+    Description
+    Detects if calls to current_setting() and auth.<function>() in RLS policies are being unnecessarily re-evaluated for each row
+    4.Issue
+    Table public.transactions has a row level security policy Users can view their own transactions that re-evaluates current_setting() or auth.<function>() for each row. This produces suboptimal query performance at scale. Resolve the issue by replacing auth.<function>() with (select auth.<function>()). See docs for more info.
+
+    Description
+    Detects if calls to current_setting() and auth.<function>() in RLS policies are being unnecessarily re-evaluated for each row
+    5.Issue
+    Table public.transactions has a row level security policy Users can insert their own transactions that re-evaluates current_setting() or auth.<function>() for each row. This produces suboptimal query performance at scale. Resolve the issue by replacing auth.<function>() with (select auth.<function>()). See docs for more info.
+
+    Description
+    Detects if calls to current_setting() and auth.<function>() in RLS policies are being unnecessarily re-evaluated for each row
+    6.Issue
+    Table public.transactions has a row level security policy Users can update their own transactions that re-evaluates current_setting() or auth.<function>() for each row. This produces suboptimal query performance at scale. Resolve the issue by replacing auth.<function>() with (select auth.<function>()). See docs for more info.
+    Description
+    Detects if calls to current_setting() and auth.<function>() in RLS policies are being unnecessarily re-evaluated for each row
+    7.Issue
+    Table public.transactions has a row level security policy Users can delete their own transactions that re-evaluates current_setting() or auth.<function>() for each row. This produces suboptimal query performance at scale. Resolve the issue by replacing auth.<function>() with (select auth.<function>()). See docs for more info.
+    Description
+    Detects if calls to current_setting() and auth.<function>() in RLS policies are being unnecessarily re-evaluated for each row-
+26.e qikjo cka eshte ;Issue
+Supabase Auth prevents the use of compromised passwords by checking against HaveIBeenPwned.org. Enable this feature to enhance security.
+Description - Leaked password protection is currently disabled.
+27.ne web nuk po lejon me fshi transaksione
+    hook.js:608 
+    Invalid DOM property `transform-origin`. Did you mean `transformOrigin`?
+    generativelanguage.g…LY9ztxUd_dworjgE;:1 
+    
+    Failed to load resource: the server responded with a status of 400 ()
+    C:\Users\Lenovo\Desk…rc\api\gemini.js:41 Gemini Error (Ignored): API key not valid. Please pass a valid API key.
+    generativelanguage.g…LY9ztxUd_dworjgE;:1 
+    
+    Failed to load resource: the server responded with a status of 400 ()
+    C:\Users\Lenovo\Desk…rc\api\gemini.js:41 Gemini Error (Ignored): API key not valid. Please pass a valid API key.
+    generativelanguage.g…LY9ztxUd_dworjgE;:1 
+    
+    Failed to load resource: the server responded with a status of 400 ()
+    C:\Users\Lenovo\Desk…rc\api\gemini.js:41 Gemini Error (Ignored): API key not valid. Please pass a valid API key.
+    generativelanguage.g…LY9ztxUd_dworjgE;:1 
+    
+    Failed to load resource: the server responded with a status of 400 ()
+    C:\Users\Lenovo\Desk…rc\api\gemini.js:41 Gemini Error (Ignored): API key not valid. Please pass a valid API key.
+    C:\Users\Lenovo\Desk…\AuthContext.js:107 [auth] Auth state changed: SIGNED_IN has session
+    -------------
+    C:\Users\Lenovo\Desk…dule\lib\fetch.js:5 
+    
+    GET https://iihlrviuvpyzjcjxuphz.supabase.co/rest/v1/profiles?select=first_name…gender%2Cbirthdate%2Cavatar_url&id=eq.5a4647d4-11d3-44d9-b657-72c258a6adca 400 (Bad Request)
+    hook.js:608 
+    Error fetching profile: 
+    {code: '42703', details: null, hint: null, message: 'column profiles.first_name does not exist'}
+    C:\Users\Lenovo\Desk…dule\lib\fetch.js:5 
+    
+    PATCH https://iihlrviuvpyzjcjxuphz.supabase.co/rest/v1/profiles?id=eq.5a4647d4-11d3-44d9-b657-72c258a6adca 400 (Bad Request)
+    hook.js:608 
+    
+    {code: 'PGRST204', details: null, hint: null, message: "Could not find the 'birthdate' column of 'profiles' in the schema cache"}
+    ﻿
+    -----------kjo lart ke ne web
+    -----------
+    ne telefon
+    Error fetching profile: {"code": "42703", "details": null, "hint": null, "message": "column profiles.first_name does not exist"}
+    ---
+    WARN  [expo-image-picker] `ImagePicker.MediaTypeOptions` have been deprecated. Use `ImagePicker.MediaType` or an array of `ImagePicker.MediaType` instead.
+    ERROR  {"code": "PGRST204", "details": null, "hint": null, "message": "Could not find the 'avatar_url' column of 'profiles' in the schema cache"}
+    po ashtu e qitke gabim:Deshtoi ngarkimi i fotos.Siguroheni qe keni krijuar bucket 'avatars' ne Supabase.
+28.ne .env ndohet api key i gemini,valid eshte sepse e kam krijuar  ne googel ai studio projectin pastaj api key,
+po ashtu a mundet ne telefon android kete menyne posht qe eshte me e qu vetem pak me larte,sepse ne samsung po pshillet me navigation bar qe eshte,edhe spo bon kaniher me i prek butonat
+29.me fshi ne web po e qet dialogin qe a je i sigurt,por nuk e fshijti ne fund,
+ne telefon
+Gabim - nuk mund te perditesoj profili.
+Gemini Error (Ignored): Gemini API free tier is not available in your country. Please enable billing on your project in Google AI Studio.
+LOG Gemini Error (Ignored): Gemini API free tier is not available in your country. Please enable billing on your project in Google AI Studio.
+ERROR {"code": "PGRST204", "details": null, "hint": null, "message": "Could not find the 'updated_at' column of 'profiles' in the schema cache"}
+Call Stack addlog dicka,addconsolelog,reactconsoleerrorhandler,console.level,handlesave,asyncgeneratorstep,_next
+30.dicka ka problem ne web se po ka probleme me session,me token ose dicka spo len me bo sign out
+[auth] Auth state changed: SIGNED_IN has session
+2C:\Users\Lenovo\Desktop\AAB\Viti 3 Semestri 5\Programimi për Pajisje Mobile\AI-Mobile-Gentrit-Hyseni-PF\PersonalFinance\src\contexts\AuthContext.js:230 [auth] Signing out...
+ne f12 application po e fshij key ne local storage qe me bo reload faqen se ndryshe po met ne reload
+ne telefon eshte me mire,me lejoj me ndryshu profilin foton.
+31.super,edhe me lejoj me bo sign out,me ndryshu passwordin,edhe krejt eshte ne rregull deri ketu,
+vetem duhet qe buttoni sign out te jete edhe tek faqja raporte edhe tek profili ,njejte si ne home screen ne anen e djathe lart,
+32.jojo leje edhe ate ku ka qene,me pelqen ashtu ai button sign out.
+33.
+34.
+35.

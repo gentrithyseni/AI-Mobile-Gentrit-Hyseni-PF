@@ -5,7 +5,7 @@ function getFallbackAdvice() {
     "💡 Mundohu të kursesh 20% të të ardhurave këtë muaj.",
     "📉 Shpenzimet po rriten. Shiko ku mund të shkurtosh.",
     "🚀 Bilanci duket mirë! Vazhdo kështu.",
-    "💰 Konsidero të investosh tepricën.",
+    "💰 Konsidero të investosh kursimet e tepërta.",
     "📊 Kategoria 'Ushqim' po zë pjesën më të madhe.",
     "🛡️ Krijo një fond emergjence për ditë të vështira."
   ];

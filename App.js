@@ -2,11 +2,12 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { PieChart, User, Wallet } from 'lucide-react-native';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, Platform, View } from 'react-native';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 
 // Import Screens
 import AddTransactionScreen from './src/screens/AddTransactionScreen';
+import AllTransactionsScreen from './src/screens/AllTransactionsScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
@@ -23,7 +24,12 @@ function MainTabs() {
         headerShown: false,
         tabBarActiveTintColor: '#2563EB', // Ngjyra Blu kur është aktiv
         tabBarInactiveTintColor: '#9CA3AF', // Ngjyra Gri kur s'është aktiv
-        tabBarStyle: { paddingBottom: 5, paddingTop: 5, height: 60 },
+        tabBarStyle: { 
+          paddingBottom: 10, 
+          paddingTop: 10, 
+          height: 70,
+          marginBottom: Platform.OS === 'android' ? 20 : 0, // Ngre menynë pak lart në Android
+        },
         tabBarIcon: ({ color, size }) => {
           if (route.name === 'Kreu') return <Wallet color={color} size={size} />;
           if (route.name === 'Raporte') return <PieChart color={color} size={size} />;
@@ -61,6 +67,7 @@ function AppNavigator() {
           <>
             <Stack.Screen name="MainTabs" component={MainTabs} />
             <Stack.Screen name="AddTransaction" component={AddTransactionScreen} />
+            <Stack.Screen name="AllTransactions" component={AllTransactionsScreen} />
           </>
         )}
       </Stack.Navigator>

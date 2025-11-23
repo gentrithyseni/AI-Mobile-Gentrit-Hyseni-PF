@@ -1,4 +1,4 @@
-import { BrainCircuit, PlusCircle, Target, TrendingDown, TrendingUp, Wallet } from 'lucide-react-native';
+import { BrainCircuit, LogOut, PlusCircle, Target, TrendingDown, TrendingUp, Wallet } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Svg, { G, Path } from 'react-native-svg';
@@ -41,7 +41,7 @@ const SimplePieChart = ({ data }) => {
 };
 
 export default function HomeScreen({ navigation }) {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const [transactions, setTransactions] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [aiAdvice, setAiAdvice] = useState({ text: 'Duke analizuar...', loading: true });
@@ -50,6 +50,15 @@ export default function HomeScreen({ navigation }) {
     { id: 1, title: 'Laptop', target: 1500, current: 450, icon: '💻', color: '#3B82F6' },
     { id: 2, title: 'Pushime', target: 800, current: 200, icon: '🏖️', color: '#F97316' },
   ];
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      // Nuk ka nevoje per navigation.replace('Login') sepse App.js e ben automatikisht kur user behet null
+    } catch (e) {
+      console.error('Sign out error', e);
+    }
+  };
 
   const loadData = async () => {
     if (!user) return;
@@ -106,6 +115,11 @@ export default function HomeScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
+        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 10 }}>
+            <TouchableOpacity onPress={handleSignOut} style={{ padding: 8, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 20 }}>
+                <LogOut size={20} color="white" />
+            </TouchableOpacity>
+        </View>
         <View style={styles.headerTop}>
            <Wallet size={80} color="rgba(255,255,255,0.1)" style={{position:'absolute', right: 0, top: -10}} />
            <Text style={styles.balanceLabel}>Bilanci Aktual</Text>
@@ -141,7 +155,7 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.aiCard}>
            <View style={{flexDirection:'row', alignItems:'center', marginBottom: 5}}>
              <BrainCircuit size={18} color="#9333EA" />
-             <Text style={styles.aiTitle}> Gemini AI Insight</Text>
+             <Text style={styles.aiTitle}> Gemini Ndihmesi Financiar AI </Text>
            </View>
            <Text style={styles.aiText}>
              {aiAdvice.loading ? 'Duke analizuar...' : aiAdvice.text}
@@ -183,9 +197,14 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.section}>
            <View style={{flexDirection:'row', justifyContent:'space-between', alignItems:'center', marginHorizontal: 20, marginBottom: 10}}>
              <Text style={styles.sectionTitle}>Transaksionet e Fundit</Text>
-             <TouchableOpacity onPress={() => navigation.navigate('AddTransaction')}>
-                <Text style={{color:'#2563EB', fontWeight:'600'}}>Shto +</Text>
-             </TouchableOpacity>
+             <View style={{flexDirection:'row', gap: 15}}>
+                <TouchableOpacity onPress={() => navigation.navigate('AllTransactions')}>
+                    <Text style={{color:'#6B7280', fontWeight:'600'}}>Shiko të gjitha</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => navigation.navigate('AddTransaction')}>
+                    <Text style={{color:'#2563EB', fontWeight:'600'}}>Shto +</Text>
+                </TouchableOpacity>
+             </View>
            </View>
            
            {transactions.length === 0 && <Text style={{marginLeft:20, color:'#999'}}>Nuk ka transaksione ende.</Text>}
@@ -202,7 +221,7 @@ export default function HomeScreen({ navigation }) {
                    </View>
                    <View>
                       <Text style={styles.txCategory}>{item.category}</Text>
-                      <Text style={styles.txDate}>{new Date(item.date).toLocaleDateString()}</Text>
+                      <Text style={styles.txDate}>{new Date(item.date).toLocaleDateString()} {new Date(item.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</Text>
                    </View>
                 </View>
                 <Text style={{fontWeight:'bold', color: ['Income','Paga','Te Ardhura'].includes(item.category) ? '#059669' : '#DC2626'}}>

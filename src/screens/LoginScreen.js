@@ -67,8 +67,8 @@ export default function LoginScreen({ navigation }) {
       </View>
       
       <View style={styles.cardContainer}>
-        <Text style={styles.title}>{isSignUp ? 'Krijo Llogari' : 'Mirësevini'}</Text>
-        <Text style={styles.subtitle}>Menaxho financat tua me inteligjencë.</Text>
+        <Text style={styles.title}>{isSignUp ? 'Krijo Llogari' : 'Mirë se vini'}</Text>
+        <Text style={styles.subtitle}>Menaxho financat tuaja me inteligjencë.</Text>
 
         {/* Form Inputs */}
         <View style={styles.form}>
