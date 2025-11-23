@@ -1,10 +1,11 @@
-import { BrainCircuit, LogOut, PlusCircle, Target, TrendingDown, TrendingUp, Wallet } from 'lucide-react-native';
+import { BrainCircuit, LogOut, Moon, PlusCircle, Sun, Target, TrendingDown, TrendingUp, Wallet } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Svg, { G, Path } from 'react-native-svg';
 import { getFinancialAdvice } from '../api/gemini';
 import { getTransactions } from '../api/transactions';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 const SimplePieChart = ({ data }) => {
   const total = data.reduce((acc, item) => acc + item.y, 0);
@@ -42,6 +43,7 @@ const SimplePieChart = ({ data }) => {
 
 export default function HomeScreen({ navigation }) {
   const { user, signOut } = useAuth();
+  const { colors, isDarkMode, toggleTheme } = useTheme();
   const [transactions, setTransactions] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [aiAdvice, setAiAdvice] = useState({ text: 'Duke analizuar...', loading: true });
@@ -113,9 +115,14 @@ export default function HomeScreen({ navigation }) {
   }, [transactions]);
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 10 }}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { backgroundColor: colors.primary }]}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            {/* Dark Mode Toggle */}
+            <TouchableOpacity onPress={toggleTheme} style={{ padding: 8, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 20 }}>
+                {isDarkMode ? <Sun size={20} color="white" /> : <Moon size={20} color="white" />}
+            </TouchableOpacity>
+
             <TouchableOpacity onPress={handleSignOut} style={{ padding: 8, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 20 }}>
                 <LogOut size={20} color="white" />
             </TouchableOpacity>
@@ -149,15 +156,15 @@ export default function HomeScreen({ navigation }) {
 
       <ScrollView 
         contentContainerStyle={{paddingBottom: 100}} 
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={loadData} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={loadData} tintColor={colors.primary} />}
       >
         {/* Gemini Card - E shtymë poshtë me marginTop: 10 */}
-        <View style={styles.aiCard}>
+        <View style={[styles.aiCard, { backgroundColor: colors.card }]}>
            <View style={{flexDirection:'row', alignItems:'center', marginBottom: 5}}>
              <BrainCircuit size={18} color="#9333EA" />
              <Text style={styles.aiTitle}> Gemini Ndihmesi Financiar AI </Text>
            </View>
-           <Text style={styles.aiText}>
+           <Text style={[styles.aiText, { color: colors.textSecondary }]}>
              {aiAdvice.loading ? 'Duke analizuar...' : aiAdvice.text}
            </Text>
         </View>
@@ -165,20 +172,20 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.section}>
             <View style={{flexDirection:'row', alignItems:'center', marginBottom:10}}>
                 <Target size={18} color="#F59E0B" />
-                <Text style={styles.sectionTitle}> Synimet</Text>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}> Synimet</Text>
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{paddingLeft: 20}}>
                 {goals.map(g => {
                    const pct = Math.min(100, Math.round((g.current/g.target)*100));
                    return (
-                     <View key={g.id} style={styles.goalCard}>
+                     <View key={g.id} style={[styles.goalCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
                         <View style={{flexDirection:'row', justifyContent:'space-between'}}>
                            <Text style={{fontSize:20}}>{g.icon}</Text>
-                           <Text style={{fontSize:10, fontWeight:'bold', backgroundColor:'#F3F4F6', padding:3, borderRadius:5}}>{pct}%</Text>
+                           <Text style={{fontSize:10, fontWeight:'bold', backgroundColor: isDarkMode ? '#374151' : '#F3F4F6', color: colors.text, padding:3, borderRadius:5}}>{pct}%</Text>
                         </View>
-                        <Text style={styles.goalTitle}>{g.title}</Text>
+                        <Text style={[styles.goalTitle, { color: colors.text }]}>{g.title}</Text>
                         <Text style={styles.goalSub}>€{g.current} / €{g.target}</Text>
-                        <View style={{height:4, backgroundColor:'#E5E7EB', borderRadius:2, marginTop:5}}>
+                        <View style={{height:4, backgroundColor: isDarkMode ? '#374151' : '#E5E7EB', borderRadius:2, marginTop:5}}>
                            <View style={{width:`${pct}%`, backgroundColor: g.color, height:4, borderRadius:2}} />
                         </View>
                      </View>
@@ -188,39 +195,39 @@ export default function HomeScreen({ navigation }) {
         </View>
 
         <View style={styles.section}>
-             <Text style={[styles.sectionTitle, {marginLeft: 20}]}>Shpenzimet sipas Kategorisë</Text>
-             <View style={styles.chartCard}>
+             <Text style={[styles.sectionTitle, {marginLeft: 20, color: colors.text}]}>Shpenzimet sipas Kategorisë</Text>
+             <View style={[styles.chartCard, { backgroundColor: colors.card }]}>
                 <SimplePieChart data={chartData} />
              </View>
         </View>
 
         <View style={styles.section}>
            <View style={{flexDirection:'row', justifyContent:'space-between', alignItems:'center', marginHorizontal: 20, marginBottom: 10}}>
-             <Text style={styles.sectionTitle}>Transaksionet e Fundit</Text>
+             <Text style={[styles.sectionTitle, { color: colors.text }]}>Transaksionet e Fundit</Text>
              <View style={{flexDirection:'row', gap: 15}}>
                 <TouchableOpacity onPress={() => navigation.navigate('AllTransactions')}>
-                    <Text style={{color:'#6B7280', fontWeight:'600'}}>Shiko të gjitha</Text>
+                    <Text style={{color: colors.textSecondary, fontWeight:'600'}}>Shiko të gjitha</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => navigation.navigate('AddTransaction')}>
-                    <Text style={{color:'#2563EB', fontWeight:'600'}}>Shto +</Text>
+                    <Text style={{color: colors.primary, fontWeight:'600'}}>Shto +</Text>
                 </TouchableOpacity>
              </View>
            </View>
            
-           {transactions.length === 0 && <Text style={{marginLeft:20, color:'#999'}}>Nuk ka transaksione ende.</Text>}
+           {transactions.length === 0 && <Text style={{marginLeft:20, color: colors.textSecondary}}>Nuk ka transaksione ende.</Text>}
 
            {transactions.slice(0, 5).map(item => (
              <TouchableOpacity 
                 key={item.id} 
-                style={styles.txItem}
+                style={[styles.txItem, { backgroundColor: colors.card }]}
                 onPress={() => navigation.navigate('AddTransaction', { transaction: item })} // Dërgojmë transaksionin për editim
              >
                 <View style={{flexDirection:'row', alignItems:'center'}}>
-                   <View style={[styles.txIcon, {backgroundColor: ['Income','Paga','Te Ardhura'].includes(item.category) ? '#D1FAE5' : '#FEE2E2'}]}>
+                   <View style={[styles.txIcon, {backgroundColor: ['Income','Paga','Te Ardhura'].includes(item.category) ? (isDarkMode ? 'rgba(16, 185, 129, 0.2)' : '#D1FAE5') : (isDarkMode ? 'rgba(239, 68, 68, 0.2)' : '#FEE2E2')}]}>
                       {['Income','Paga','Te Ardhura'].includes(item.category) ? <TrendingUp size={16} color="#059669"/> : <TrendingDown size={16} color="#DC2626"/>}
                    </View>
                    <View>
-                      <Text style={styles.txCategory}>{item.category}</Text>
+                      <Text style={[styles.txCategory, { color: colors.text }]}>{item.category}</Text>
                       <Text style={styles.txDate}>{new Date(item.date).toLocaleDateString()} {new Date(item.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</Text>
                    </View>
                 </View>
@@ -232,7 +239,7 @@ export default function HomeScreen({ navigation }) {
         </View>
       </ScrollView>
 
-      <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('AddTransaction')}>
+      <TouchableOpacity style={[styles.fab, { backgroundColor: colors.primary }]} onPress={() => navigation.navigate('AddTransaction')}>
          <PlusCircle size={30} color="white" />
       </TouchableOpacity>
     </View>
@@ -240,8 +247,8 @@ export default function HomeScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
-  header: { backgroundColor: '#2563EB', padding: 20, paddingBottom: 30, borderBottomLeftRadius: 24, borderBottomRightRadius: 24, paddingTop: 50 },
+  container: { flex: 1 },
+  header: { padding: 20, paddingBottom: 30, borderBottomLeftRadius: 24, borderBottomRightRadius: 24, paddingTop: 50 },
   balanceLabel: { color: '#BFDBFE', fontSize: 14, fontWeight: '500' },
   balanceValue: { color: 'white', fontSize: 32, fontWeight: 'bold', marginVertical: 5 },
   headerTop: { marginBottom: 20 },
@@ -252,7 +259,7 @@ const styles = StyleSheet.create({
   statValue: { color: 'white', fontSize: 16, fontWeight: 'bold' },
   
   // NDRYSHIM: marginTop 10 për ta shtyrë poshtë dhe mos të bllokohet nga headeri
-  aiCard: { backgroundColor: 'white', margin: 20, marginTop: 10, padding: 15, borderRadius: 16, shadowColor:'#000', shadowOpacity:0.05, elevation:3, borderLeftWidth: 4, borderLeftColor: '#9333EA' },
+  aiCard: { margin: 20, marginTop: 10, padding: 15, borderRadius: 16, shadowColor:'#000', shadowOpacity:0.05, elevation:3, borderLeftWidth: 4, borderLeftColor: '#9333EA' },
   aiTitle: { fontWeight: 'bold', color: '#9333EA', fontSize: 12 },
   aiText: { color: '#4B5563', fontSize: 13, marginTop: 4, lineHeight: 18 },
 
@@ -263,12 +270,12 @@ const styles = StyleSheet.create({
   goalTitle: { fontWeight: '600', color: '#374151', fontSize: 13, marginTop: 5 },
   goalSub: { color: '#9CA3AF', fontSize: 11, marginBottom: 5 },
   
-  chartCard: { backgroundColor: 'white', marginHorizontal: 20, borderRadius: 16, padding: 10, elevation: 2 },
+  chartCard: { marginHorizontal: 20, borderRadius: 16, padding: 10, elevation: 2 },
 
-  txItem: { backgroundColor: 'white', marginHorizontal: 20, marginBottom: 8, padding: 12, borderRadius: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', shadowColor:'#000', shadowOpacity:0.03, elevation: 1 },
+  txItem: { marginHorizontal: 20, marginBottom: 8, padding: 12, borderRadius: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', shadowColor:'#000', shadowOpacity:0.03, elevation: 1 },
   txIcon: { padding: 8, borderRadius: 20, marginRight: 12 },
   txCategory: { fontWeight: '600', color: '#374151', fontSize: 14 },
   txDate: { color: '#9CA3AF', fontSize: 11 },
 
-  fab: { position: 'absolute', bottom: 20, right: 20, backgroundColor: '#2563EB', width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', elevation: 5, shadowColor: '#2563EB', shadowOpacity: 0.4, shadowOffset: {width:0, height:4} }
+  fab: { position: 'absolute', bottom: 20, right: 20, width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', elevation: 5, shadowColor: '#2563EB', shadowOpacity: 0.4, shadowOffset: {width:0, height:4} }
 });

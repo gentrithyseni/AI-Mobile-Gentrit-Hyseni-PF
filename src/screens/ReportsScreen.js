@@ -4,9 +4,10 @@ import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View
 import Svg, { G, Path, Rect, Text as SvgText } from 'react-native-svg';
 import { getTransactions } from '../api/transactions';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 // Simple Bar Chart Component
-const SimpleBarChart = ({ income, expense }) => {
+const SimpleBarChart = ({ income, expense, textColor }) => {
   const maxVal = Math.max(income, expense, 1); // Avoid division by zero
   const barHeight = 200;
   const barWidth = 60;
@@ -36,7 +37,7 @@ const SimpleBarChart = ({ income, expense }) => {
         >
           €{income}
         </SvgText>
-        <SvgText x="55" y={barHeight + 20} fill="#374151" fontSize="14" textAnchor="middle">Të Ardhura</SvgText>
+        <SvgText x="55" y={barHeight + 20} fill={textColor} fontSize="14" textAnchor="middle">Të Ardhura</SvgText>
 
         {/* Expense Bar */}
         <Rect
@@ -57,14 +58,14 @@ const SimpleBarChart = ({ income, expense }) => {
         >
           €{expense}
         </SvgText>
-        <SvgText x="145" y={barHeight + 20} fill="#374151" fontSize="14" textAnchor="middle">Shpenzime</SvgText>
+        <SvgText x="145" y={barHeight + 20} fill={textColor} fontSize="14" textAnchor="middle">Shpenzime</SvgText>
       </Svg>
     </View>
   );
 };
 
 // Simple Chart Component
-const SimplePieChart = ({ data }) => {
+const SimplePieChart = ({ data, textColor }) => {
   const total = data.reduce((acc, item) => acc + item.y, 0);
   if (total === 0) return <Text style={{textAlign:'center', color:'#999', margin: 20}}>S'ka të dhëna</Text>;
 
@@ -91,7 +92,7 @@ const SimplePieChart = ({ data }) => {
         {data.map((item, i) => (
            <View key={i} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 5 }}>
              <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: item.color, marginRight: 8 }} />
-             <Text style={{ fontSize: 14, color: '#374151' }}>{item.x} ({Math.round((item.y/total)*100)}%, {item.y} €)</Text>
+             <Text style={{ fontSize: 14, color: textColor }}>{item.x} ({Math.round((item.y/total)*100)}%, {item.y} €)</Text>
            </View>
         ))}
       </View>
@@ -101,6 +102,7 @@ const SimplePieChart = ({ data }) => {
 
 export default function ReportsScreen({ navigation }) {
   const { user, signOut } = useAuth();
+  const { colors } = useTheme();
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -141,36 +143,36 @@ export default function ReportsScreen({ navigation }) {
     .reduce((acc, t) => acc + Number(t.amount), 0);
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 40, marginBottom: 20 }}>
-        <Text style={styles.title}>Raportet Financiare</Text>
-        <TouchableOpacity onPress={signOut} style={{ padding: 8, backgroundColor: '#E5E7EB', borderRadius: 20 }}>
+        <Text style={[styles.title, { color: colors.text }]}>Raportet Financiare</Text>
+        <TouchableOpacity onPress={signOut} style={{ padding: 8, backgroundColor: colors.card, borderRadius: 20 }}>
             <LogOut size={20} color="#EF4444" />
         </TouchableOpacity>
       </View>
       
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Shpenzimet Totale</Text>
+      <View style={[styles.card, { backgroundColor: colors.card }]}>
+        <Text style={[styles.cardTitle, { color: colors.textSecondary }]}>Shpenzimet Totale</Text>
         <Text style={styles.totalValue}>€ {totalExpense.toFixed(2)}</Text>
       </View>
 
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Të Ardhura vs Shpenzime</Text>
-        {loading ? <ActivityIndicator color="#2563EB" /> : <SimpleBarChart income={totalIncome} expense={totalExpense} />}
+      <View style={[styles.card, { backgroundColor: colors.card }]}>
+        <Text style={[styles.cardTitle, { color: colors.textSecondary }]}>Të Ardhura vs Shpenzime</Text>
+        {loading ? <ActivityIndicator color={colors.primary} /> : <SimpleBarChart income={totalIncome} expense={totalExpense} textColor={colors.text} />}
       </View>
 
-      <View style={[styles.card, {marginBottom: 50}]}>
-        <Text style={styles.cardTitle}>Ndarja sipas Kategorisë</Text>
-        {loading ? <ActivityIndicator color="#2563EB" /> : <SimplePieChart data={chartData} />}
+      <View style={[styles.card, {marginBottom: 50, backgroundColor: colors.card}]}>
+        <Text style={[styles.cardTitle, { color: colors.textSecondary }]}>Ndarja sipas Kategorisë</Text>
+        {loading ? <ActivityIndicator color={colors.primary} /> : <SimplePieChart data={chartData} textColor={colors.text} />}
       </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB', padding: 20 },
-  title: { fontSize: 28, fontWeight: 'bold', color: '#1F2937' },
-  card: { backgroundColor: 'white', borderRadius: 16, padding: 20, marginBottom: 20, shadowColor: '#000', shadowOpacity: 0.05, elevation: 2 },
-  cardTitle: { fontSize: 16, fontWeight: '600', color: '#6B7280', marginBottom: 10 },
+  container: { flex: 1, padding: 20 },
+  title: { fontSize: 28, fontWeight: 'bold' },
+  card: { borderRadius: 16, padding: 20, marginBottom: 20, shadowColor: '#000', shadowOpacity: 0.05, elevation: 2 },
+  cardTitle: { fontSize: 16, fontWeight: '600', marginBottom: 10 },
   totalValue: { fontSize: 36, fontWeight: 'bold', color: '#EF4444' }
 });

@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { PieChart, User, Wallet } from 'lucide-react-native';
 import { ActivityIndicator, Platform, View } from 'react-native';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
+import { ThemeProvider, useTheme } from './src/contexts/ThemeContext';
 
 // Import Screens
 import AddTransactionScreen from './src/screens/AddTransactionScreen';
@@ -18,17 +19,21 @@ const Tab = createBottomTabNavigator();
 
 // 1. Kjo është menyja poshtë (Home, Reports, Profile)
 function MainTabs() {
+  const { colors } = useTheme();
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: '#2563EB', // Ngjyra Blu kur është aktiv
-        tabBarInactiveTintColor: '#9CA3AF', // Ngjyra Gri kur s'është aktiv
+        tabBarActiveTintColor: colors.primary, // Ngjyra Blu kur është aktiv
+        tabBarInactiveTintColor: colors.textSecondary, // Ngjyra Gri kur s'është aktiv
         tabBarStyle: { 
           paddingBottom: 10, 
           paddingTop: 10, 
           height: 70,
           marginBottom: Platform.OS === 'android' ? 20 : 0, // Ngre menynë pak lart në Android
+          backgroundColor: colors.card,
+          borderTopColor: colors.border,
         },
         tabBarIcon: ({ color, size }) => {
           if (route.name === 'Kreu') return <Wallet color={color} size={size} />;
@@ -47,18 +52,19 @@ function MainTabs() {
 // 2. Ky është menaxheri i navigimit (Login vs Tabs)
 function AppNavigator() {
   const { user, loading } = useAuth();
+  const { colors } = useTheme();
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#2563EB" />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
         {!user ? (
           // Nëse s'ka user -> Shko te Login
           <Stack.Screen name="Login" component={LoginScreen} />
@@ -78,7 +84,9 @@ function AppNavigator() {
 export default function App() {
   return (
     <AuthProvider>
-      <AppNavigator />
+      <ThemeProvider>
+        <AppNavigator />
+      </ThemeProvider>
     </AuthProvider>
   );
 }

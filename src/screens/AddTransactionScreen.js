@@ -4,9 +4,11 @@ import { Controller, useForm } from 'react-hook-form';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { createTransaction, deleteTransaction, updateTransaction } from '../api/transactions';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 export default function AddTransactionScreen({ navigation, route }) {
   const { user } = useAuth();
+  const { colors, isDarkMode } = useTheme();
   
   // Marrim transaksionin nëse po vijmë për editim
   const transactionToEdit = route.params?.transaction;
@@ -103,12 +105,12 @@ export default function AddTransactionScreen({ navigation, route }) {
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{flex:1}}>
-      <View style={styles.container}>
-        <View style={styles.header}>
-            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-                <ArrowLeft size={24} color="#1F2937" />
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={[styles.header, { backgroundColor: colors.card }]}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backBtn, { backgroundColor: isDarkMode ? colors.background : '#F3F4F6' }]}>
+                <ArrowLeft size={24} color={colors.text} />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>{isEditing ? 'Ndrysho Transaksion' : 'Shto Transaksion'}</Text>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>{isEditing ? 'Ndrysho Transaksion' : 'Shto Transaksion'}</Text>
             
             {/* Butoni Fshij shfaqet vetëm kur jemi duke edituar */}
             {isEditing && (
@@ -119,31 +121,33 @@ export default function AddTransactionScreen({ navigation, route }) {
         </View>
 
         <ScrollView contentContainerStyle={{padding: 20}}>
-            <View style={styles.switchContainer}>
-                <TouchableOpacity onPress={() => setType('expense')} style={[styles.switchBtn, type === 'expense' && styles.activeExpense]}>
-                    <Text style={[styles.switchText, type === 'expense' && styles.activeText]}>Shpenzim</Text>
+            <View style={[styles.switchContainer, { backgroundColor: colors.border }]}
+>
+                <TouchableOpacity onPress={() => setType('expense')} style={[styles.switchBtn, type === 'expense' && { backgroundColor: colors.card }]}>
+                    <Text style={[styles.switchText, { color: colors.textSecondary }, type === 'expense' && { color: colors.text }]}>Shpenzim</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => setType('income')} style={[styles.switchBtn, type === 'income' && styles.activeIncome]}>
-                    <Text style={[styles.switchText, type === 'income' && styles.activeText]}>Të Ardhura</Text>
+                <TouchableOpacity onPress={() => setType('income')} style={[styles.switchBtn, type === 'income' && { backgroundColor: colors.card }]}>
+                    <Text style={[styles.switchText, { color: colors.textSecondary }, type === 'income' && { color: colors.text }]}>Të Ardhura</Text>
                 </TouchableOpacity>
             </View>
 
-            <Text style={styles.label}>Shuma (€)</Text>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>Shuma (€)</Text>
             <Controller
                 control={control}
                 name="amount"
                 render={({ field: { onChange, value } }) => (
                 <TextInput 
                     keyboardType="numeric" 
-                    style={styles.inputLarge} 
+                    style={[styles.inputLarge, { color: colors.text, borderColor: colors.border }]} 
                     placeholder="0.00" 
+                    placeholderTextColor={colors.textSecondary}
                     value={value} 
                     onChangeText={onChange} 
                 />
                 )}
             />
 
-            <Text style={styles.label}>Kategoria</Text>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>Kategoria</Text>
             <Controller
                 control={control}
                 name="category"
@@ -153,25 +157,31 @@ export default function AddTransactionScreen({ navigation, route }) {
                         <TouchableOpacity 
                             key={cat} 
                             onPress={() => onChange(cat)}
-                            style={[styles.chip, value === cat && styles.activeChip]}
-                        >
-                            <Text style={[styles.chipText, value === cat && styles.activeChipText]}>{cat}</Text>
+                            style={[styles.chip, { backgroundColor: colors.card }, value === cat && { backgroundColor: colors.primary }]}>
+                            <Text style={[styles.chipText, { color: colors.text }, value === cat && { color: 'white' }]}>{cat}</Text>
                         </TouchableOpacity>
                     ))}
                 </View>
                 )}
             />
 
-            <Text style={styles.label}>Përshkrimi / Shënime</Text>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>Përshkrimi / Shënime</Text>
             <Controller
                 control={control}
                 name="notes"
                 render={({ field: { onChange, value } }) => (
-                <TextInput style={styles.input} placeholder="p.sh. Kafe me shoqërinë" value={value} onChangeText={onChange} />
+                <TextInput 
+                  style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]} 
+                  placeholder="p.sh. Kafe me shoqërinë" 
+                  placeholderTextColor={colors.textSecondary}
+                  value={value} 
+                  onChangeText={onChange} 
+                />
                 )}
             />
 
-            <TouchableOpacity onPress={handleSubmit(onSubmit)} style={styles.saveBtn}>
+            <TouchableOpacity onPress={handleSubmit(onSubmit)} style={[styles.saveBtn, { backgroundColor: colors.primary }]}
+>
                 <Save size={20} color="white" style={{marginRight:8}} />
                 <Text style={styles.saveBtnText}>{isEditing ? 'Përditëso' : 'Ruaj Transaksionin'}</Text>
             </TouchableOpacity>
@@ -182,28 +192,23 @@ export default function AddTransactionScreen({ navigation, route }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
-  header: { flexDirection: 'row', alignItems: 'center', paddingTop: 50, paddingHorizontal: 20, paddingBottom: 10, backgroundColor: 'white' },
-  backBtn: { padding: 8, backgroundColor: '#F3F4F6', borderRadius: 20, marginRight: 15 },
+  container: { flex: 1 },
+  header: { flexDirection: 'row', alignItems: 'center', paddingTop: 50, paddingHorizontal: 20, paddingBottom: 10 },
+  backBtn: { padding: 8, borderRadius: 20, marginRight: 15 },
   deleteBtn: { padding: 8, marginLeft: 'auto' }, // E shtyn djathtas
-  headerTitle: { fontSize: 20, fontWeight: 'bold', color: '#1F2937' },
+  headerTitle: { fontSize: 20, fontWeight: 'bold' },
   
-  switchContainer: { flexDirection: 'row', backgroundColor: '#E5E7EB', borderRadius: 12, padding: 4, marginBottom: 24 },
+  switchContainer: { flexDirection: 'row', borderRadius: 12, padding: 4, marginBottom: 24 },
   switchBtn: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 10 },
-  activeExpense: { backgroundColor: 'white', shadowColor: '#000', shadowOpacity: 0.1, elevation: 2 },
-  activeIncome: { backgroundColor: 'white', shadowColor: '#000', shadowOpacity: 0.1, elevation: 2 },
-  switchText: { fontWeight: '600', color: '#6B7280' },
-  activeText: { color: '#1F2937' },
+  switchText: { fontWeight: '600' },
 
-  label: { fontSize: 14, fontWeight: '600', color: '#4B5563', marginBottom: 8 },
-  inputLarge: { fontSize: 32, fontWeight: 'bold', color: '#1F2937', marginBottom: 24, paddingVertical: 10, borderBottomWidth: 2, borderColor: '#E5E7EB' },
-  input: { backgroundColor: 'white', borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 12, padding: 14, fontSize: 16, marginBottom: 24 },
+  label: { fontSize: 14, fontWeight: '600', marginBottom: 8 },
+  inputLarge: { fontSize: 32, fontWeight: 'bold', marginBottom: 24, paddingVertical: 10, borderBottomWidth: 2 },
+  input: { borderWidth: 1, borderRadius: 12, padding: 14, fontSize: 16, marginBottom: 24 },
   
-  chip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#E5E7EB', marginBottom: 8 },
-  activeChip: { backgroundColor: '#2563EB' },
-  chipText: { color: '#4B5563', fontWeight: '500' },
-  activeChipText: { color: 'white' },
+  chip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, marginBottom: 8 },
+  chipText: { fontWeight: '500' },
 
-  saveBtn: { backgroundColor: '#2563EB', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, borderRadius: 14, shadowColor: '#2563EB', shadowOpacity: 0.3, elevation: 4 },
+  saveBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, borderRadius: 14, shadowColor: '#2563EB', shadowOpacity: 0.3, elevation: 4 },
   saveBtnText: { color: 'white', fontSize: 16, fontWeight: 'bold' }
 });

@@ -4,9 +4,11 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import supabaseClient from '../config/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 export default function ProfileScreen() {
   const { user, signOut } = useAuth();
+  const { colors } = useTheme();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -164,82 +166,86 @@ export default function ProfileScreen() {
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{flex:1}}>
-      <ScrollView style={styles.container}>
+      <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 40, marginBottom: 20 }}>
-          <Text style={styles.headerTitle}>Profili</Text>
-          <TouchableOpacity onPress={signOut} style={{ padding: 8, backgroundColor: '#E5E7EB', borderRadius: 20 }}>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Profili</Text>
+          <TouchableOpacity onPress={signOut} style={{ padding: 8, backgroundColor: colors.card, borderRadius: 20 }}>
               <LogOut size={20} color="#EF4444" />
           </TouchableOpacity>
         </View>
 
-        <View style={styles.profileCard}>
+        <View style={[styles.profileCard, { backgroundColor: colors.card }]}>
           <TouchableOpacity onPress={pickImage} style={styles.avatarContainer}>
             {uploading ? (
-              <View style={styles.avatarPlaceholder}>
-                 <ActivityIndicator color="#2563EB" />
+              <View style={[styles.avatarPlaceholder, { backgroundColor: colors.background }]}>
+                 <ActivityIndicator color={colors.primary} />
               </View>
             ) : avatarUrl ? (
               <Image source={{ uri: avatarUrl }} style={styles.avatarImage} />
             ) : (
-              <View style={styles.avatarPlaceholder}>
+              <View style={[styles.avatarPlaceholder, { backgroundColor: colors.background }]}>
                 <Text style={{fontSize: 30}}>👤</Text>
               </View>
             )}
-            <View style={styles.cameraIcon}>
+            <View style={[styles.cameraIcon, { backgroundColor: colors.primary, borderColor: colors.card }]}>
               <Camera size={14} color="white" />
             </View>
           </TouchableOpacity>
           
-          <Text style={styles.name}>{formData.first_name ? `${formData.first_name} ${formData.last_name}` : (user?.email?.split('@')[0] || 'Përdorues')}</Text>
-          <Text style={styles.email}>{user?.email}</Text>
+          <Text style={[styles.name, { color: colors.text }]}>{formData.first_name ? `${formData.first_name} ${formData.last_name}` : (user?.email?.split('@')[0] || 'Përdorues')}</Text>
+          <Text style={[styles.email, { color: colors.textSecondary }]}>{user?.email}</Text>
         </View>
 
-        <View style={styles.formSection}>
-          <Text style={styles.sectionTitle}>Të dhënat personale</Text>
+        <View style={[styles.formSection, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Të dhënat personale</Text>
           
-          {loading ? <ActivityIndicator color="#2563EB" /> : (
+          {loading ? <ActivityIndicator color={colors.primary} /> : (
             <>
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Emri</Text>
+                <Text style={[styles.label, { color: colors.textSecondary }]}>Emri</Text>
                 <TextInput 
-                  style={styles.input} 
+                  style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]} 
                   value={formData.first_name}
                   onChangeText={t => setFormData({...formData, first_name: t})}
                   placeholder="Emri juaj"
+                  placeholderTextColor={colors.textSecondary}
                 />
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Mbiemri</Text>
+                <Text style={[styles.label, { color: colors.textSecondary }]}>Mbiemri</Text>
                 <TextInput 
-                  style={styles.input} 
+                  style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]} 
                   value={formData.last_name}
                   onChangeText={t => setFormData({...formData, last_name: t})}
                   placeholder="Mbiemri juaj"
+                  placeholderTextColor={colors.textSecondary}
                 />
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Gjinia</Text>
+                <Text style={[styles.label, { color: colors.textSecondary }]}>Gjinia</Text>
                 <TextInput 
-                  style={styles.input} 
+                  style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]} 
                   value={formData.gender}
                   onChangeText={t => setFormData({...formData, gender: t})}
                   placeholder="M / F"
+                  placeholderTextColor={colors.textSecondary}
                 />
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Ditëlindja</Text>
+                <Text style={[styles.label, { color: colors.textSecondary }]}>Ditëlindja</Text>
                 <TextInput 
-                  style={styles.input} 
+                  style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]} 
                   value={formData.birthdate}
                   onChangeText={t => setFormData({...formData, birthdate: t})}
                   placeholder="YYYY-MM-DD"
+                  placeholderTextColor={colors.textSecondary}
                 />
               </View>
 
-              <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={saving}>
+              <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.primary }]} onPress={handleSave} disabled={saving}>
                 {saving ? <ActivityIndicator color="white" /> : (
                   <>
                     <Save size={20} color="white" />
@@ -251,25 +257,27 @@ export default function ProfileScreen() {
           )}
         </View>
 
-        <View style={styles.formSection}>
-          <Text style={styles.sectionTitle}>Ndrysho Fjalëkalimin</Text>
+        <View style={[styles.formSection, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Ndrysho Fjalëkalimin</Text>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Fjalëkalimi i ri</Text>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>Fjalëkalimi i ri</Text>
             <TextInput 
-              style={styles.input} 
+              style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]} 
               value={newPassword}
               onChangeText={setNewPassword}
               placeholder="Shkruani fjalëkalimin e ri"
+              placeholderTextColor={colors.textSecondary}
               secureTextEntry
             />
           </View>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Konfirmo Fjalëkalimin</Text>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>Konfirmo Fjalëkalimin</Text>
             <TextInput 
-              style={styles.input} 
+              style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]} 
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               placeholder="Konfirmoni fjalëkalimin"
+              placeholderTextColor={colors.textSecondary}
               secureTextEntry
             />
           </View>
@@ -278,7 +286,7 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.logoutBtn} onPress={signOut}>
+        <TouchableOpacity style={[styles.logoutBtn, { backgroundColor: colors.card }]} onPress={signOut}>
           <LogOut size={20} color="#EF4444" />
           <Text style={styles.logoutText}>Dil nga llogaria</Text>
         </TouchableOpacity>
@@ -290,27 +298,27 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB', padding: 20 },
-  headerTitle: { fontSize: 28, fontWeight: 'bold', color: '#1F2937' },
-  profileCard: { backgroundColor: 'white', borderRadius: 20, padding: 24, alignItems: 'center', marginBottom: 24, shadowColor: '#000', shadowOpacity: 0.05, elevation: 2 },
+  container: { flex: 1, padding: 20 },
+  headerTitle: { fontSize: 28, fontWeight: 'bold' },
+  profileCard: { borderRadius: 20, padding: 24, alignItems: 'center', marginBottom: 24, shadowColor: '#000', shadowOpacity: 0.05, elevation: 2 },
   
   avatarContainer: { position: 'relative', marginBottom: 16 },
   avatarImage: { width: 100, height: 100, borderRadius: 50 },
-  avatarPlaceholder: { width: 100, height: 100, borderRadius: 50, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center' },
-  cameraIcon: { position: 'absolute', bottom: 0, right: 0, backgroundColor: '#2563EB', padding: 6, borderRadius: 15, borderWidth: 2, borderColor: 'white' },
+  avatarPlaceholder: { width: 100, height: 100, borderRadius: 50, alignItems: 'center', justifyContent: 'center' },
+  cameraIcon: { position: 'absolute', bottom: 0, right: 0, padding: 6, borderRadius: 15, borderWidth: 2 },
 
-  name: { fontSize: 20, fontWeight: 'bold', color: '#1F2937' },
-  email: { fontSize: 14, color: '#6B7280', marginTop: 4 },
+  name: { fontSize: 20, fontWeight: 'bold' },
+  email: { fontSize: 14, marginTop: 4 },
   
-  formSection: { backgroundColor: 'white', borderRadius: 16, padding: 20, marginBottom: 24 },
-  sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 15, color: '#374151' },
+  formSection: { borderRadius: 16, padding: 20, marginBottom: 24 },
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 15 },
   inputGroup: { marginBottom: 15 },
-  label: { fontSize: 14, color: '#4B5563', marginBottom: 5, fontWeight: '500' },
-  input: { borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 8, padding: 12, fontSize: 16, color: '#1F2937' },
+  label: { fontSize: 14, marginBottom: 5, fontWeight: '500' },
+  input: { borderWidth: 1, borderRadius: 8, padding: 12, fontSize: 16 },
   
-  saveBtn: { backgroundColor: '#2563EB', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 16, borderRadius: 12, marginTop: 10 },
+  saveBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 16, borderRadius: 12, marginTop: 10 },
   saveBtnText: { color: 'white', fontWeight: 'bold', marginLeft: 8, fontSize: 16 },
 
-  logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#FEF2F2', padding: 16, borderRadius: 16, marginBottom: 20 },
+  logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 16, borderRadius: 16, marginBottom: 20 },
   logoutText: { marginLeft: 8, fontSize: 16, fontWeight: 'bold', color: '#EF4444' }
 });

@@ -16,6 +16,9 @@
 - 🤖 **Këshilla AI**: Këshilla financiare të gjeneruara nga Google Gemini AI
 - 👤 **Profili Personal**: Ngarkimi i fotos së profilit dhe ndryshimi i fjalëkalimit
 - 🌐 **Multi-Platform**: Funksionon në Android, iOS dhe Web
+- **Raporte Financiare**: Shikoni shpenzimet dhe të ardhurat përmes grafikëve vizualë.
+- **Dark Mode**: Mundësi për të ndryshuar temën e aplikacionit (Light/Dark) nga ekrani kryesor.
+- **AI Financial Advisor**: Integrim me Google Gemini për këshilla financiare të personalizuara.
 
 ---
 
