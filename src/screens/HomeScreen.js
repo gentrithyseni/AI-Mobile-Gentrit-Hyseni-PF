@@ -1,4 +1,4 @@
-import { BrainCircuit, LogOut, Moon, PlusCircle, Sun, Target, TrendingDown, TrendingUp, Wallet } from 'lucide-react-native';
+import { BrainCircuit, LogOut, Moon, PlusCircle, Sparkles, Sun, Target, TrendingDown, TrendingUp, Wallet } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Svg, { G, Path } from 'react-native-svg';
@@ -56,7 +56,6 @@ export default function HomeScreen({ navigation }) {
   const handleSignOut = async () => {
     try {
       await signOut();
-      // Nuk ka nevoje per navigation.replace('Login') sepse App.js e ben automatikisht kur user behet null
     } catch (e) {
       console.error('Sign out error', e);
     }
@@ -139,7 +138,7 @@ export default function HomeScreen({ navigation }) {
               </View>
               <View>
                  <Text style={styles.statLabel}>Të Ardhura</Text>
-                 <Text style={styles.statValue}>€ {totals.income}</Text>
+                 <Text style={styles.statValue}>€ {totals.income.toFixed(2)}</Text>
               </View>
            </View>
            <View style={styles.statBox}>
@@ -148,7 +147,7 @@ export default function HomeScreen({ navigation }) {
               </View>
               <View>
                  <Text style={styles.statLabel}>Shpenzime</Text>
-                 <Text style={styles.statValue}>€ {totals.expense}</Text>
+                 <Text style={styles.statValue}>€ {totals.expense.toFixed(2)}</Text>
               </View>
            </View>
         </View>
@@ -158,11 +157,11 @@ export default function HomeScreen({ navigation }) {
         contentContainerStyle={{paddingBottom: 100}} 
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={loadData} tintColor={colors.primary} />}
       >
-        {/* Gemini Card - E shtymë poshtë me marginTop: 10 */}
+        {/* Gemini Card */}
         <View style={[styles.aiCard, { backgroundColor: colors.card }]}>
            <View style={{flexDirection:'row', alignItems:'center', marginBottom: 5}}>
              <BrainCircuit size={18} color="#9333EA" />
-             <Text style={styles.aiTitle}> Gemini Ndihmesi Financiar AI </Text>
+             <Text style={styles.aiTitle} > GROQ AI Ndihmesi Financiar </Text>
            </View>
            <Text style={[styles.aiText, { color: colors.textSecondary }]}>
              {aiAdvice.loading ? 'Duke analizuar...' : aiAdvice.text}
@@ -220,7 +219,7 @@ export default function HomeScreen({ navigation }) {
              <TouchableOpacity 
                 key={item.id} 
                 style={[styles.txItem, { backgroundColor: colors.card }]}
-                onPress={() => navigation.navigate('AddTransaction', { transaction: item })} // Dërgojmë transaksionin për editim
+                onPress={() => navigation.navigate('AddTransaction', { transaction: item })}
              >
                 <View style={{flexDirection:'row', alignItems:'center'}}>
                    <View style={[styles.txIcon, {backgroundColor: ['Income','Paga','Te Ardhura'].includes(item.category) ? (isDarkMode ? 'rgba(16, 185, 129, 0.2)' : '#D1FAE5') : (isDarkMode ? 'rgba(239, 68, 68, 0.2)' : '#FEE2E2')}]}>
@@ -239,9 +238,24 @@ export default function HomeScreen({ navigation }) {
         </View>
       </ScrollView>
 
-      <TouchableOpacity style={[styles.fab, { backgroundColor: colors.primary }]} onPress={() => navigation.navigate('AddTransaction')}>
-         <PlusCircle size={30} color="white" />
-      </TouchableOpacity>
+      {/* FLOATING ACTION BUTTONS (Shtuar Chat) */}
+      <View style={styles.fabContainer}>
+        {/* AI Chat Button */}
+        <TouchableOpacity 
+          style={[styles.fab, {backgroundColor: '#7C3AED', marginBottom: 15}]} 
+          onPress={() => navigation.navigate('ChatAdd')}
+        >
+           <Sparkles size={24} color="white" />
+        </TouchableOpacity>
+
+        {/* Manual Add Button */}
+        <TouchableOpacity 
+          style={[styles.fab, { backgroundColor: colors.primary }]} 
+          onPress={() => navigation.navigate('AddTransaction')}
+        >
+           <PlusCircle size={30} color="white" />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -258,9 +272,8 @@ const styles = StyleSheet.create({
   statLabel: { color: '#BFDBFE', fontSize: 10 },
   statValue: { color: 'white', fontSize: 16, fontWeight: 'bold' },
   
-  // NDRYSHIM: marginTop 10 për ta shtyrë poshtë dhe mos të bllokohet nga headeri
   aiCard: { margin: 20, marginTop: 10, padding: 15, borderRadius: 16, shadowColor:'#000', shadowOpacity:0.05, elevation:3, borderLeftWidth: 4, borderLeftColor: '#9333EA' },
-  aiTitle: { fontWeight: 'bold', color: '#9333EA', fontSize: 12 },
+  aiTitle: { fontWeight: 'bold', color: '#9333EA', fontSize: 16 },
   aiText: { color: '#4B5563', fontSize: 13, marginTop: 4, lineHeight: 18 },
 
   section: { marginTop: 20 },
@@ -277,5 +290,17 @@ const styles = StyleSheet.create({
   txCategory: { fontWeight: '600', color: '#374151', fontSize: 14 },
   txDate: { color: '#9CA3AF', fontSize: 11 },
 
-  fab: { position: 'absolute', bottom: 20, right: 20, width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', elevation: 5, shadowColor: '#2563EB', shadowOpacity: 0.4, shadowOffset: {width:0, height:4} }
+  // STIL I RI PER BUTONAT
+  fabContainer: { position: 'absolute', bottom: 20, right: 20, alignItems: 'center' },
+  fab: { 
+    width: 56, 
+    height: 56, 
+    borderRadius: 28, 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    elevation: 5, 
+    shadowColor: '#000', 
+    shadowOpacity: 0.3, 
+    shadowOffset: {width:0, height:4} 
+  }
 });

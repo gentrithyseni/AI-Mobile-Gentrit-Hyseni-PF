@@ -2,6 +2,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { PieChart, User, Wallet } from 'lucide-react-native';
+import React from 'react';
 import { ActivityIndicator, Platform, View } from 'react-native';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import { ThemeProvider, useTheme } from './src/contexts/ThemeContext';
@@ -9,6 +10,7 @@ import { ThemeProvider, useTheme } from './src/contexts/ThemeContext';
 // Import Screens
 import AddTransactionScreen from './src/screens/AddTransactionScreen';
 import AllTransactionsScreen from './src/screens/AllTransactionsScreen';
+import ChatAddScreen from './src/screens/ChatAddScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
@@ -17,7 +19,7 @@ import ReportsScreen from './src/screens/ReportsScreen';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// 1. Kjo është menyja poshtë (Home, Reports, Profile)
+// 1. Menyja poshtë (Home, Reports, Profile)
 function MainTabs() {
   const { colors } = useTheme();
 
@@ -25,13 +27,13 @@ function MainTabs() {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: colors.primary, // Ngjyra Blu kur është aktiv
-        tabBarInactiveTintColor: colors.textSecondary, // Ngjyra Gri kur s'është aktiv
+        tabBarActiveTintColor: colors.primary, 
+        tabBarInactiveTintColor: colors.textSecondary, 
         tabBarStyle: { 
           paddingBottom: 10, 
           paddingTop: 10, 
           height: 70,
-          marginBottom: Platform.OS === 'android' ? 20 : 0, // Ngre menynë pak lart në Android
+          marginBottom: Platform.OS === 'android' ? 20 : 0, 
           backgroundColor: colors.card,
           borderTopColor: colors.border,
         },
@@ -49,7 +51,7 @@ function MainTabs() {
   );
 }
 
-// 2. Ky është menaxheri i navigimit (Login vs Tabs)
+// 2. Menaxheri i navigimit
 function AppNavigator() {
   const { user, loading } = useAuth();
   const { colors } = useTheme();
@@ -66,14 +68,13 @@ function AppNavigator() {
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
         {!user ? (
-          // Nëse s'ka user -> Shko te Login
           <Stack.Screen name="Login" component={LoginScreen} />
         ) : (
-          // Nëse ka user -> Shko te Tabs (që ka Home brenda) dhe lejo AddTransaction mbi to
           <>
             <Stack.Screen name="MainTabs" component={MainTabs} />
             <Stack.Screen name="AddTransaction" component={AddTransactionScreen} />
             <Stack.Screen name="AllTransactions" component={AllTransactionsScreen} />
+            <Stack.Screen name="ChatAdd" component={ChatAddScreen} />
           </>
         )}
       </Stack.Navigator>

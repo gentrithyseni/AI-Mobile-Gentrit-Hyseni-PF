@@ -64,7 +64,7 @@ export default function LoginScreen({ navigation }) {
             style={{ 
                 position: 'absolute', 
                 top: 50, 
-                right: 20, 
+                left: 20, 
                 padding: 8, 
                 backgroundColor: 'rgba(255,255,255,0.2)', 
                 borderRadius: 20,
