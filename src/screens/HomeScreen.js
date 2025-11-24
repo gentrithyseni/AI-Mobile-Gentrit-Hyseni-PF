@@ -2,7 +2,7 @@ import { BrainCircuit, LogOut, Moon, PlusCircle, Sparkles, Sun, Target, Trending
 import { useEffect, useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Svg, { G, Path } from 'react-native-svg';
-import { getFinancialAdvice } from '../api/gemini';
+import { getFinancialAdvice } from '../api/groq';
 import { getTransactions } from '../api/transactions';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -170,7 +170,7 @@ export default function HomeScreen({ navigation }) {
 
         <View style={styles.section}>
             <View style={{flexDirection:'row', alignItems:'center', marginBottom:10}}>
-                <Target size={18} color="#F59E0B" />
+                <Target size={30} color="#F59E0B" />
                 <Text style={[styles.sectionTitle, { color: colors.text }]}> Synimet</Text>
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{paddingLeft: 20}}>
@@ -180,7 +180,7 @@ export default function HomeScreen({ navigation }) {
                      <View key={g.id} style={[styles.goalCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
                         <View style={{flexDirection:'row', justifyContent:'space-between'}}>
                            <Text style={{fontSize:20}}>{g.icon}</Text>
-                           <Text style={{fontSize:10, fontWeight:'bold', backgroundColor: isDarkMode ? '#374151' : '#F3F4F6', color: colors.text, padding:3, borderRadius:5}}>{pct}%</Text>
+                           <Text style={{fontSize:15, fontWeight:'bold', backgroundColor: isDarkMode ? '#374151' : '#F3F4F6', color: colors.text, padding:3, borderRadius:5}}>{pct}%</Text>
                         </View>
                         <Text style={[styles.goalTitle, { color: colors.text }]}>{g.title}</Text>
                         <Text style={styles.goalSub}>€{g.current} / €{g.target}</Text>

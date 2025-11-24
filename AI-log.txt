@@ -141,8 +141,13 @@ vetem duhet qe buttoni sign out te jete edhe tek faqja raporte edhe tek profili 
 33.a mundesh me e shtu nje button vetem tek homescreen,per dark mode on/off.Pershtati ngjyrat psh keto qe jane te jete light mode ose dark mode off,dark mode on te kete ngjyra siq e mendon ti.Normal pasi te aplikohet psh dark mode,ajo te shfaqet edhe tek pamjet tjera psh kur shtohet nje transaksion ose tek profili ose tek raportet,perveq tek login.
 34.shume shume mire u dal,por tash ne dark mode bone qe psh kjo e kalterta qe eshte per transaksione,me u bo si e hinte ose naj ngjyre qe pershtatet me dark mode,edhe qe dallohet pak,po ashtu implementoj keto edhe ne login screen,krejt
 35.mire por duhet te duket buttoni edhe ne loginscreen qe te mund ta bej on off dark mode
-36.
-37.
-38.
-39.
-40.
+36.hajt te provojme edhe chat to add,edhe po ashtu me shti pak me shume me mendu keta per keshilla,spo di naj avancim najsen
+37.pse pom dalin shpenzimet keshtu,Shpenzime€ 283.78999999999996,i kom shpenzimet 4.80,12.99,66.00,100.00
+38.edhe reports,ndreqi pak shtoje naj sen,se jane pak te thjeshte.;Po ashtu tek te ardhurat vs Shpenzime ndreqi qe te shfaqet edhe shuma e te ardhurave,sepse nuk shfaqet;shuma e shpenzimeve shfaqet por del si keq psh 288.05 eshte tash,e del 288.05 si me nje vije ne mes dhe 88 eshte si bashke,si i mbishkruar.
+39.tash e dallova,shenja e EURO po del ne mes te numrave psh 288.05 E po del 28E8.05,edhe po mbishkruhet,serish dmth dul,nuk u ndreq
+40.e kom bo me lshu jokes tek gemini.js,por psh po e shkruan ne fillim psh,"Ofendon,duke shpenzuar aq shume per ushqim,mund te hapesh restaurantin tend,emoji". Qata ofendon mos te shfaqet,vetem te jete joke,humori.
+41.
+42.
+43.
+44.
+45.

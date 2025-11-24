@@ -1,7 +1,7 @@
 import { ArrowLeft, CheckCircle, Send, Sparkles, XCircle } from 'lucide-react-native';
 import React, { useRef, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { parseTransactionWithAI } from '../api/gemini';
+import { parseTransactionWithAI } from '../api/groq';
 import { createTransaction } from '../api/transactions';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
