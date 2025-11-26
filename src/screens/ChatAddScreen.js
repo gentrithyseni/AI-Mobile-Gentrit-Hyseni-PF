@@ -1,7 +1,8 @@
 import { ArrowLeft, CheckCircle, Send, Sparkles, XCircle } from 'lucide-react-native';
 import React, { useRef, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { parseTransactionWithAI } from '../api/groq';
+import { createGoal, getGoals, updateGoal } from '../api/goals';
+import { parseUserIntent } from '../api/groq';
 import { createTransaction } from '../api/transactions';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -11,11 +12,19 @@ export default function ChatAddScreen({ navigation }) {
   const { colors } = useTheme(); // Përdorim temën tënde
   const [inputText, setInputText] = useState('');
   const [messages, setMessages] = useState([
-    { id: 1, text: "Përshëndetje! 👋 Unë jam asistenti yt financiar.\nMë trego çfarë shpenzove ose fitove sot.\n\nShembull: 'Pagova 25 euro për rrymë'", sender: 'ai' }
+    { id: 1, text: "Përshëndetje! 👋 Unë jam asistenti yt financiar.\nMë trego çfarë shpenzove ose fitove sot.\n\nShembull: 'Pagova 25 euro për rrymë' ose 'Krijo synim për banesë'", sender: 'ai' }
   ]);
   const [loading, setLoading] = useState(false);
-  const [pendingTx, setPendingTx] = useState(null);
+  const [pendingAction, setPendingAction] = useState(null);
+  const [goals, setGoals] = useState([]);
   const scrollViewRef = useRef();
+
+  // Load goals on mount
+  React.useEffect(() => {
+    if (user) {
+        getGoals(user.id).then(g => setGoals(g || []));
+    }
+  }, [user]);
 
   const handleSend = async () => {
     if (!inputText.trim()) return;
@@ -26,22 +35,32 @@ export default function ChatAddScreen({ navigation }) {
     setMessages(prev => [...prev, userMsg]);
     setInputText('');
     setLoading(true);
-    setPendingTx(null);
+    setPendingAction(null);
 
     try {
       // 2. Pyet AI
-      const result = await parseTransactionWithAI(userText);
+      const result = await parseUserIntent(userText, goals);
       
       if (result) {
-        setPendingTx(result);
+        setPendingAction(result);
+        
+        let aiText = '';
+        if (result.action === 'create_goal') {
+            aiText = `Dëshiron të krijosh këtë synim?\n\n🎯 Titulli: ${result.title}\n💰 Synimi: €${result.target_amount}\n💵 Aktualisht: €${result.current_amount}`;
+        } else if (result.action === 'add_to_goal') {
+            aiText = `Dëshiron të shtosh para tek synimi?\n\n🎯 Synimi: ${result.goal_title}\n➕ Shuma: €${result.amount}`;
+        } else {
+            aiText = `E kuptova! 👇\n\nShuma: €${result.amount}\nKategoria: ${result.category}\nPërshkrimi: ${result.notes}`;
+        }
+
         const aiMsg = { 
           id: Date.now() + 1, 
-          text: `E kuptova! 👇\n\nShuma: €${result.amount}\nKategoria: ${result.category}\nPërshkrimi: ${result.notes}`, 
+          text: aiText, 
           sender: 'ai' 
         };
         setMessages(prev => [...prev, aiMsg]);
       } else {
-        setMessages(prev => [...prev, { id: Date.now()+1, text: "Më fal, nuk e kuptova mirë. Provo të shkruash shumën dhe kategorinë më qartë.", sender: 'ai' }]);
+        setMessages(prev => [...prev, { id: Date.now()+1, text: "Më fal, nuk e kuptova mirë. Provo të shkruash më qartë.", sender: 'ai' }]);
       }
     } catch (e) {
       setMessages(prev => [...prev, { id: Date.now()+1, text: "Pata një problem me lidhjen. Provo përsëri.", sender: 'ai' }]);
@@ -51,27 +70,69 @@ export default function ChatAddScreen({ navigation }) {
   };
 
   const handleConfirm = async () => {
-    if (!pendingTx || !user) return;
+    if (!pendingAction || !user) return;
     try {
-      const tx = {
-        user_id: user.id,
-        amount: pendingTx.amount,
-        category: pendingTx.category,
-        type: pendingTx.type,
-        description: pendingTx.notes,
-        date: new Date().toISOString(),
-      };
-      await createTransaction(tx);
-      setMessages(prev => [...prev, { id: Date.now(), text: "✅ U ruajt me sukses! Mund të vazhdosh me tjetrën.", sender: 'ai' }]);
-      setPendingTx(null);
+      if (pendingAction.action === 'create_goal') {
+          await createGoal({
+              user_id: user.id,
+              title: pendingAction.title,
+              target_amount: pendingAction.target_amount,
+              current_amount: pendingAction.current_amount || 0,
+              icon: pendingAction.icon || '🎯',
+              color: '#3B82F6'
+          });
+          // Refresh goals
+          getGoals(user.id).then(g => setGoals(g || []));
+          setMessages(prev => [...prev, { id: Date.now(), text: "✅ Synimi u krijua me sukses!", sender: 'ai' }]);
+
+      } else if (pendingAction.action === 'add_to_goal') {
+          // Find goal by title (fuzzy match handled by AI returning exact title hopefully, or we search)
+          const goal = goals.find(g => g.title.toLowerCase() === pendingAction.goal_title.toLowerCase()) || goals.find(g => pendingAction.goal_title.toLowerCase().includes(g.title.toLowerCase()));
+          
+          if (goal) {
+              const newAmount = Number(goal.current_amount) + Number(pendingAction.amount);
+              await updateGoal(goal.id, { current_amount: newAmount });
+              
+              // Also create a transaction record for this
+              await createTransaction({
+                  user_id: user.id,
+                  amount: pendingAction.amount,
+                  category: goal.title, // Use goal title as category
+                  type: 'expense',
+                  description: `Shtim në synimin: ${goal.title}`,
+                  date: new Date().toISOString(),
+              });
+              
+              // Refresh goals
+              getGoals(user.id).then(g => setGoals(g || []));
+              setMessages(prev => [...prev, { id: Date.now(), text: `✅ U shtuan €${pendingAction.amount} tek "${goal.title}"!`, sender: 'ai' }]);
+          } else {
+              setMessages(prev => [...prev, { id: Date.now(), text: `❌ Nuk e gjeta synimin "${pendingAction.goal_title}".`, sender: 'ai' }]);
+          }
+
+      } else {
+          // Normal transaction
+          const tx = {
+            user_id: user.id,
+            amount: pendingAction.amount,
+            category: pendingAction.category,
+            type: pendingAction.type,
+            description: pendingAction.notes,
+            date: new Date().toISOString(),
+          };
+          await createTransaction(tx);
+          setMessages(prev => [...prev, { id: Date.now(), text: "✅ Transaksioni u ruajt me sukses!", sender: 'ai' }]);
+      }
+      
+      setPendingAction(null);
     } catch (e) {
       alert("Gabim gjatë ruajtjes: " + e.message);
     }
   };
 
   const handleCancel = () => {
-    setPendingTx(null);
-    setMessages(prev => [...prev, { id: Date.now(), text: "Në rregull, e anulova. Më thuaj tjetrën.", sender: 'ai' }]);
+    setPendingAction(null);
+    setMessages(prev => [...prev, { id: Date.now(), text: "Në rregull, e anulova.", sender: 'ai' }]);
   };
 
   return (
@@ -109,23 +170,54 @@ export default function ChatAddScreen({ navigation }) {
         {loading && <ActivityIndicator style={{marginTop:10}} color={colors.primary} />}
         
         {/* Preview & Confirm Card */}
-        {pendingTx && (
+        {pendingAction && (
           <View style={[styles.previewCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-             <Text style={[styles.previewTitle, { color: colors.text }]}>Konfirmo Transaksionin</Text>
-             <View style={styles.previewRow}>
-                <Text style={{ color: colors.textSecondary }}>Shuma:</Text>
-                <Text style={{ fontWeight: 'bold', color: colors.text }}>€{pendingTx.amount}</Text>
-             </View>
-             <View style={styles.previewRow}>
-                <Text style={{ color: colors.textSecondary }}>Kategoria:</Text>
-                <Text style={{ fontWeight: 'bold', color: colors.text }}>{pendingTx.category}</Text>
-             </View>
-             <View style={styles.previewRow}>
-                <Text style={{ color: colors.textSecondary }}>Lloji:</Text>
-                <Text style={{ fontWeight: 'bold', color: pendingTx.type === 'income' ? '#10B981' : '#EF4444' }}>
-                    {pendingTx.type === 'income' ? 'Të Ardhura' : 'Shpenzim'}
-                </Text>
-             </View>
+             <Text style={[styles.previewTitle, { color: colors.text }]}>Konfirmo Veprimin</Text>
+             
+             {pendingAction.action === 'create_goal' ? (
+                 <>
+                    <View style={styles.previewRow}>
+                        <Text style={{ color: colors.textSecondary }}>Titulli:</Text>
+                        <Text style={{ fontWeight: 'bold', color: colors.text }}>{pendingAction.title}</Text>
+                    </View>
+                    <View style={styles.previewRow}>
+                        <Text style={{ color: colors.textSecondary }}>Synimi:</Text>
+                        <Text style={{ fontWeight: 'bold', color: colors.text }}>€{pendingAction.target_amount}</Text>
+                    </View>
+                    <View style={styles.previewRow}>
+                        <Text style={{ color: colors.textSecondary }}>Fillimi:</Text>
+                        <Text style={{ fontWeight: 'bold', color: colors.text }}>€{pendingAction.current_amount}</Text>
+                    </View>
+                 </>
+             ) : pendingAction.action === 'add_to_goal' ? (
+                 <>
+                    <View style={styles.previewRow}>
+                        <Text style={{ color: colors.textSecondary }}>Synimi:</Text>
+                        <Text style={{ fontWeight: 'bold', color: colors.text }}>{pendingAction.goal_title}</Text>
+                    </View>
+                    <View style={styles.previewRow}>
+                        <Text style={{ color: colors.textSecondary }}>Shto:</Text>
+                        <Text style={{ fontWeight: 'bold', color: '#10B981' }}>+ €{pendingAction.amount}</Text>
+                    </View>
+                 </>
+             ) : (
+                 <>
+                     <View style={styles.previewRow}>
+                        <Text style={{ color: colors.textSecondary }}>Shuma:</Text>
+                        <Text style={{ fontWeight: 'bold', color: colors.text }}>€{pendingAction.amount}</Text>
+                     </View>
+                     <View style={styles.previewRow}>
+                        <Text style={{ color: colors.textSecondary }}>Kategoria:</Text>
+                        <Text style={{ fontWeight: 'bold', color: colors.text }}>{pendingAction.category}</Text>
+                     </View>
+                     <View style={styles.previewRow}>
+                        <Text style={{ color: colors.textSecondary }}>Lloji:</Text>
+                        <Text style={{ fontWeight: 'bold', color: pendingAction.type === 'income' ? '#10B981' : '#EF4444' }}>
+                            {pendingAction.type === 'income' ? 'Të Ardhura' : 'Shpenzim'}
+                        </Text>
+                     </View>
+                 </>
+             )}
              
              <View style={styles.actions}>
                 <TouchableOpacity onPress={handleCancel} style={styles.actionBtnCancel}>

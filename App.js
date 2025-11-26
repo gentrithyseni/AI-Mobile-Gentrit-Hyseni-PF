@@ -2,14 +2,15 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { PieChart, User, Wallet } from 'lucide-react-native';
-import React from 'react';
 import { ActivityIndicator, Platform, View } from 'react-native';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import { ThemeProvider, useTheme } from './src/contexts/ThemeContext';
 
 // Import Screens
+import AddGoalScreen from './src/screens/AddGoalScreen';
 import AddTransactionScreen from './src/screens/AddTransactionScreen';
 import AllTransactionsScreen from './src/screens/AllTransactionsScreen';
+import BudgetScreen from './src/screens/BudgetScreen';
 import ChatAddScreen from './src/screens/ChatAddScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import LoginScreen from './src/screens/LoginScreen';
@@ -33,7 +34,7 @@ function MainTabs() {
           paddingBottom: 10, 
           paddingTop: 10, 
           height: 70,
-          marginBottom: Platform.OS === 'android' ? 20 : 0, 
+          marginBottom: Platform.OS === 'android' ? 25 : 0, 
           backgroundColor: colors.card,
           borderTopColor: colors.border,
         },
@@ -74,7 +75,9 @@ function AppNavigator() {
             <Stack.Screen name="MainTabs" component={MainTabs} />
             <Stack.Screen name="AddTransaction" component={AddTransactionScreen} />
             <Stack.Screen name="AllTransactions" component={AllTransactionsScreen} />
+            <Stack.Screen name="Budget" component={BudgetScreen} />
             <Stack.Screen name="ChatAdd" component={ChatAddScreen} />
+            <Stack.Screen name="AddGoal" component={AddGoalScreen} />
           </>
         )}
       </Stack.Navigator>

@@ -1,8 +1,11 @@
-import { ArrowLeft, Save, Trash2 } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
+import { ArrowLeft, Plus, Save, Trash2 } from 'lucide-react-native';
+import { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { createCategory, deleteCategory, getCategories } from '../api/categories';
+import { getGoals, updateGoal } from '../api/goals';
 import { createTransaction, deleteTransaction, updateTransaction } from '../api/transactions';
+import { CATEGORY_ICONS, DEFAULT_EXPENSE_CATEGORIES, DEFAULT_INCOME_CATEGORIES } from '../constants/categories';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -14,15 +17,28 @@ export default function AddTransactionScreen({ navigation, route }) {
   const transactionToEdit = route.params?.transaction;
   const isEditing = !!transactionToEdit;
 
+  const [customCategories, setCustomCategories] = useState([]);
+  const [goals, setGoals] = useState([]);
+  const [selectedGoalId, setSelectedGoalId] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+
   const { control, handleSubmit, setValue } = useForm({ 
     defaultValues: { 
       amount: '', 
-      category: 'Ushqim', 
+      category: '', 
       notes: '' 
     } 
   });
   
   const [type, setType] = useState('expense');
+
+  useEffect(() => {
+    if (user) {
+        getCategories(user.id).then(cats => setCustomCategories(cats || []));
+        getGoals(user.id).then(g => setGoals(g || []));
+    }
+  }, [user]);
 
   // Mbushim formën nëse jemi duke edituar
   useEffect(() => {
@@ -31,7 +47,7 @@ export default function AddTransactionScreen({ navigation, route }) {
       setValue('category', transactionToEdit.category);
       setValue('notes', transactionToEdit.description || '');
       // Përcaktojmë tipin bazuar në kategori ose fushën type
-      if (['Paga', 'Te Ardhura', 'Income', 'Dhurata'].includes(transactionToEdit.category) || transactionToEdit.type === 'income') {
+      if (DEFAULT_INCOME_CATEGORIES.includes(transactionToEdit.category) || transactionToEdit.type === 'income') {
         setType('income');
       } else {
         setType('expense');
@@ -39,11 +55,65 @@ export default function AddTransactionScreen({ navigation, route }) {
     }
   }, [transactionToEdit]);
 
-  const EXPENSE_CATS = ['Ushqim', 'Transport', 'Qira', 'Argëtim', 'Tjetër'];
-  const INCOME_CATS = ['Paga', 'Te Ardhura', 'Dhurata', 'Tjetër'];
-  const activeCats = type === 'expense' ? EXPENSE_CATS : INCOME_CATS;
+  const activeCats = useMemo(() => {
+    const defaults = type === 'expense' ? DEFAULT_EXPENSE_CATEGORIES : DEFAULT_INCOME_CATEGORIES;
+    const customs = customCategories.filter(c => c.type === type).map(c => c.name);
+    return [...defaults, ...customs];
+  }, [type, customCategories]);
+
+  const handleAddCategory = async () => {
+    if (!newCategoryName.trim()) return;
+    try {
+        const newCat = await createCategory({
+            user_id: user.id,
+            name: newCategoryName,
+            type: type,
+            icon: 'Circle',
+            color: '#808080'
+        });
+        setCustomCategories([...customCategories, newCat]);
+        setNewCategoryName('');
+        setShowModal(false);
+    } catch (e) {
+        alert('Gabim: ' + e.message);
+    }
+  };
+
+  const handleCategoryLongPress = async (catName) => {
+      // Check if it's a custom category
+      const customCat = customCategories.find(c => c.name === catName);
+      if (!customCat) {
+          Alert.alert("Info", "Kategoritë e parazgjedhura nuk mund të fshihen.");
+          return;
+      }
+
+      Alert.alert(
+          "Fshij Kategorinë",
+          `A jeni i sigurt që doni të fshini kategorinë "${catName}"?`,
+          [
+              { text: "Anulo", style: "cancel" },
+              { 
+                  text: "Fshij", 
+                  style: 'destructive',
+                  onPress: async () => {
+                      try {
+                          await deleteCategory(customCat.id);
+                          setCustomCategories(prev => prev.filter(c => c.id !== customCat.id));
+                      } catch (e) {
+                          alert("Gabim: " + e.message);
+                      }
+                  }
+              }
+          ]
+      );
+  };
 
   const onSubmit = async (values) => {
+    if (!values.category) {
+      alert('Ju lutem zgjidhni një kategori!');
+      return;
+    }
+
     try {
       const txData = {
         user_id: user?.id,
@@ -58,6 +128,15 @@ export default function AddTransactionScreen({ navigation, route }) {
         await updateTransaction(transactionToEdit.id, txData);
       } else {
         await createTransaction(txData);
+        
+        // Update Goal if selected
+        if (selectedGoalId) {
+            const goal = goals.find(g => g.id === selectedGoalId);
+            if (goal) {
+                const newAmount = Number(goal.current_amount) + parseFloat(values.amount);
+                await updateGoal(selectedGoalId, { current_amount: newAmount });
+            }
+        }
       }
       
       navigation.goBack();
@@ -148,22 +227,86 @@ export default function AddTransactionScreen({ navigation, route }) {
             />
 
             <Text style={[styles.label, { color: colors.textSecondary }]}>Kategoria</Text>
+            {!selectedGoalId && (
             <Controller
                 control={control}
                 name="category"
                 render={({ field: { onChange, value } }) => (
                 <View style={{flexDirection:'row', flexWrap:'wrap', gap: 10, marginBottom: 20}}>
-                    {activeCats.map(cat => (
+                    {activeCats.map(cat => {
+                        const IconComponent = CATEGORY_ICONS[cat]?.icon || CATEGORY_ICONS['Tjetër'].icon;
+                        const iconColor = CATEGORY_ICONS[cat]?.color || CATEGORY_ICONS['Tjetër'].color;
+                        const isSelected = value === cat;
+
+                        return (
                         <TouchableOpacity 
                             key={cat} 
                             onPress={() => onChange(cat)}
-                            style={[styles.chip, { backgroundColor: colors.card }, value === cat && { backgroundColor: colors.primary }]}>
-                            <Text style={[styles.chipText, { color: colors.text }, value === cat && { color: 'white' }]}>{cat}</Text>
+                            onLongPress={() => handleCategoryLongPress(cat)}
+                            style={[
+                                styles.chip, 
+                                { backgroundColor: colors.card, flexDirection: 'row', alignItems: 'center', gap: 6 }, 
+                                isSelected && { backgroundColor: colors.primary }
+                            ]}
+                        >
+                            <IconComponent size={16} color={isSelected ? 'white' : iconColor} />
+                            <Text style={[styles.chipText, { color: colors.text }, isSelected && { color: 'white' }]}>{cat}</Text>
                         </TouchableOpacity>
-                    ))}
+                        );
+                    })}
+                    
+                    <TouchableOpacity 
+                        onPress={() => setShowModal(true)}
+                        style={[styles.chip, { backgroundColor: colors.card, flexDirection: 'row', alignItems: 'center', gap: 6, borderStyle: 'dashed', borderWidth: 1, borderColor: colors.textSecondary }]
+}>
+                        <Plus size={16} color={colors.textSecondary} />
+                        <Text style={[styles.chipText, { color: colors.textSecondary }]}>Shto</Text>
+                    </TouchableOpacity>
                 </View>
                 )}
             />
+            )}
+
+            {/* Goals Selection Section - Only for Expenses */}
+            {type === 'expense' && goals.length > 0 && (
+                <View style={{marginBottom: 20}}>
+                    <Text style={[styles.label, { color: colors.textSecondary }]}>Lidhe me një Qëllim</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                        <TouchableOpacity 
+                            onPress={() => {
+                                setSelectedGoalId(null);
+                                setValue('category', ''); // Reset category when goal is deselected
+                            }}
+                            style={[
+                                styles.chip, 
+                                { backgroundColor: colors.card, marginRight: 10, borderWidth: 1, borderColor: selectedGoalId === null ? colors.primary : 'transparent' }
+                            ]}
+                        >
+                            <Text style={[styles.chipText, { color: colors.text }]}>Asnjë</Text>
+                        </TouchableOpacity>
+                        
+                        {goals.map(goal => (
+                            <TouchableOpacity 
+                                key={goal.id} 
+                                onPress={() => {
+                                    const newId = goal.id === selectedGoalId ? null : goal.id;
+                                    setSelectedGoalId(newId);
+                                    // If selecting a goal, set it as the category. If deselecting, clear category.
+                                    setValue('category', newId ? goal.title : '');
+                                }}
+                                style={[
+                                    styles.chip, 
+                                    { backgroundColor: colors.card, marginRight: 10, flexDirection: 'row', alignItems: 'center', gap: 5 },
+                                    selectedGoalId === goal.id && { backgroundColor: colors.primary }
+                                ]}
+                            >
+                                <Text>{goal.icon}</Text>
+                                <Text style={[styles.chipText, { color: selectedGoalId === goal.id ? 'white' : colors.text }]}>{goal.title}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+                </View>
+            )}
 
             <Text style={[styles.label, { color: colors.textSecondary }]}>Përshkrimi / Shënime</Text>
             <Controller
@@ -172,7 +315,7 @@ export default function AddTransactionScreen({ navigation, route }) {
                 render={({ field: { onChange, value } }) => (
                 <TextInput 
                   style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]} 
-                  placeholder="p.sh. Kafe me shoqërinë" 
+                  placeholder="Shkruaj ketu... " 
                   placeholderTextColor={colors.textSecondary}
                   value={value} 
                   onChangeText={onChange} 
@@ -186,6 +329,29 @@ export default function AddTransactionScreen({ navigation, route }) {
                 <Text style={styles.saveBtnText}>{isEditing ? 'Përditëso' : 'Ruaj Transaksionin'}</Text>
             </TouchableOpacity>
         </ScrollView>
+
+        <Modal visible={showModal} transparent animationType="slide">
+            <View style={{flex:1, justifyContent:'center', alignItems:'center', backgroundColor:'rgba(0,0,0,0.5)'}}>
+                <View style={{width:'80%', backgroundColor: colors.card, padding: 20, borderRadius: 16}}>
+                    <Text style={{fontSize:18, fontWeight:'bold', color: colors.text, marginBottom: 15}}>Shto Kategori të Re</Text>
+                    <TextInput 
+                        value={newCategoryName}
+                        onChangeText={setNewCategoryName}
+                        placeholder="Emri i kategorisë"
+                        placeholderTextColor={colors.textSecondary}
+                        style={{borderWidth:1, borderColor: colors.border, borderRadius: 8, padding: 10, color: colors.text, marginBottom: 20}}
+                    />
+                    <View style={{flexDirection:'row', justifyContent:'flex-end', gap: 10}}>
+                        <TouchableOpacity onPress={() => setShowModal(false)} style={{padding: 10}}>
+                            <Text style={{color: colors.textSecondary}}>Anulo</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={handleAddCategory} style={{padding: 10, backgroundColor: colors.primary, borderRadius: 8}}>
+                            <Text style={{color: 'white', fontWeight:'bold'}}>Shto</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </View>
+        </Modal>
       </View>
     </KeyboardAvoidingView>
   );
@@ -209,6 +375,5 @@ const styles = StyleSheet.create({
   chip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, marginBottom: 8 },
   chipText: { fontWeight: '500' },
 
-  saveBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, borderRadius: 14, shadowColor: '#2563EB', shadowOpacity: 0.3, elevation: 4 },
-  saveBtnText: { color: 'white', fontSize: 16, fontWeight: 'bold' }
+  saveBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, borderRadius: 14, shadowColor: '#2563EB', shadowOpacity: 0.3, elevation: 4 }
 });

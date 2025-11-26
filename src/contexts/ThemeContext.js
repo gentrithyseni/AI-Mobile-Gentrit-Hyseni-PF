@@ -41,6 +41,7 @@ export const darkTheme = {
 export const ThemeProvider = ({ children }) => {
   const systemScheme = useColorScheme();
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [currency, setCurrency] = useState('€'); // Default currency symbol
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -49,16 +50,18 @@ export const ThemeProvider = ({ children }) => {
 
   const loadTheme = async () => {
     try {
-      const savedTheme = await AsyncStorage.getItem('theme');
-      if (savedTheme) {
-        setIsDarkMode(savedTheme === 'dark');
+      const storedTheme = await AsyncStorage.getItem('theme');
+      if (storedTheme) {
+        setIsDarkMode(storedTheme === 'dark');
       } else {
-        // Default to system preference or light
-        // setIsDarkMode(systemScheme === 'dark');
-        setIsDarkMode(false); // Default to light as per request to start with current look
+        setIsDarkMode(systemScheme === 'dark');
       }
+      
+      const storedCurrency = await AsyncStorage.getItem('currency');
+      if (storedCurrency) setCurrency(storedCurrency);
+      
     } catch (e) {
-      console.log('Failed to load theme', e);
+      console.error('Failed to load theme', e);
     } finally {
       setLoading(false);
     }
@@ -70,14 +73,23 @@ export const ThemeProvider = ({ children }) => {
     try {
       await AsyncStorage.setItem('theme', newMode ? 'dark' : 'light');
     } catch (e) {
-      console.log('Failed to save theme', e);
+      console.error('Failed to save theme', e);
     }
+  };
+
+  const setAppCurrency = async (newCurrency) => {
+      setCurrency(newCurrency);
+      try {
+          await AsyncStorage.setItem('currency', newCurrency);
+      } catch (e) {
+          console.error(e);
+      }
   };
 
   const theme = isDarkMode ? darkTheme : lightTheme;
 
   return (
-    <ThemeContext.Provider value={{ isDarkMode, toggleTheme, theme, colors: theme.colors }}>
+    <ThemeContext.Provider value={{ ...theme, isDarkMode, toggleTheme, currency, setAppCurrency }}>
       {children}
     </ThemeContext.Provider>
   );

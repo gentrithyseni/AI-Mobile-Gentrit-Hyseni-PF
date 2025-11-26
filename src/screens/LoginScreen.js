@@ -1,4 +1,4 @@
-import { Moon, Sun, Wallet } from 'lucide-react-native'; // Sigurohu qe ke instaluar lucide-react-native
+import { Eye, EyeOff, Moon, Sun, Wallet } from 'lucide-react-native'; // Sigurohu qe ke instaluar lucide-react-native
 import React, { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { ActivityIndicator, Alert, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -18,6 +18,7 @@ export default function LoginScreen({ navigation }) {
   const { colors, isDarkMode, toggleTheme } = useTheme();
   const [isSignUp, setIsSignUp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { control, handleSubmit, reset } = useForm({
     defaultValues: { email: '', password: '', passwordConfirm: '', username: '' },
   });
@@ -26,7 +27,13 @@ export default function LoginScreen({ navigation }) {
     setIsLoading(true);
     try {
       const res = await signIn({ email: values.email, password: values.password });
-      if (res.error) showAlert('Gabim', res.error.message);
+      if (res.error) {
+        // Përkthejmë mesazhin e gabimit nëse është "Invalid login credentials"
+        const msg = res.error.message.includes('Invalid login credentials') 
+          ? 'Të dhënat janë të gabuara. Ju lutem provoni përsëri.' 
+          : res.error.message;
+        showAlert('Gabim', msg);
+      }
     } catch (e) {
       showAlert('Gabim', e.message);
     } finally {
@@ -121,14 +128,22 @@ export default function LoginScreen({ navigation }) {
             control={control}
             name="password"
             render={({ field: { onChange, value } }) => (
-              <TextInput 
-                style={[styles.input, { backgroundColor: colors.inputBackground, borderColor: colors.border, color: colors.text }]} 
-                placeholder="Fjalëkalimi" 
-                value={value} 
-                onChangeText={onChange} 
-                secureTextEntry 
-                placeholderTextColor={colors.textSecondary} 
-              />
+              <View style={{position: 'relative', justifyContent: 'center'}}>
+                <TextInput 
+                  style={[styles.input, { backgroundColor: colors.inputBackground, borderColor: colors.border, color: colors.text, paddingRight: 50 }]} 
+                  placeholder="Fjalëkalimi" 
+                  value={value} 
+                  onChangeText={onChange} 
+                  secureTextEntry={!showPassword} 
+                  placeholderTextColor={colors.textSecondary} 
+                />
+                <TouchableOpacity 
+                  onPress={() => setShowPassword(!showPassword)}
+                  style={{position: 'absolute', right: 15, top: 15}}
+                >
+                  {showPassword ? <EyeOff size={20} color={colors.textSecondary} /> : <Eye size={20} color={colors.textSecondary} />}
+                </TouchableOpacity>
+              </View>
             )}
           />
 
@@ -137,14 +152,16 @@ export default function LoginScreen({ navigation }) {
               control={control}
               name="passwordConfirm"
               render={({ field: { onChange, value } }) => (
-                <TextInput 
-                  style={[styles.input, { backgroundColor: colors.inputBackground, borderColor: colors.border, color: colors.text }]} 
-                  placeholder="Konfirmo Fjalëkalimin" 
-                  value={value} 
-                  onChangeText={onChange} 
-                  secureTextEntry 
-                  placeholderTextColor={colors.textSecondary} 
-                />
+                <View style={{position: 'relative', justifyContent: 'center'}}>
+                  <TextInput 
+                    style={[styles.input, { backgroundColor: colors.inputBackground, borderColor: colors.border, color: colors.text, paddingRight: 50 }]} 
+                    placeholder="Konfirmo Fjalëkalimin" 
+                    value={value} 
+                    onChangeText={onChange} 
+                    secureTextEntry={!showPassword} 
+                    placeholderTextColor={colors.textSecondary} 
+                  />
+                </View>
               )}
             />
           )}

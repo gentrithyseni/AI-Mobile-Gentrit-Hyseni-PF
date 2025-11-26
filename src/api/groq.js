@@ -67,28 +67,56 @@ export async function getFinancialAdvice(income, expense, balance, recentTransac
 }
 
 // --- 2. TRURI I RI: CHAT TO TRANSACTION ---
-export async function parseTransactionWithAI(userText) {
+export async function parseUserIntent(userText, existingGoals = []) {
   if (!GROQ_API_KEY || GROQ_API_KEY.includes("VENDOS")) {
     throw new Error("Mungon API Key");
   }
 
   try {
+    const goalNames = existingGoals.map(g => g.title).join(", ");
+    
     const prompt = `
-      Ti je një asistent që konverton tekstin natyral në JSON.
-      Teksti i userit: "${userText}"
+      Ti je një asistent financiar inteligjent. Analizo kërkesën e përdoruesit: "${userText}"
       
+      Qëllimet ekzistuese në databazë: [${goalNames}]
+      
+      Detyra jote është të kuptosh qëllimin e përdoruesit dhe të kthesh një JSON objekt me fushën "action".
+      
+      SKENARËT:
+      
+      1. KRIJIM I QËLLIMIT TË RI
+      Fjalë kyçe: "krijo qellim", "synim i ri", "mbledh para per", "dua te blej".
+      Output JSON: 
+      { 
+        "action": "create_goal", 
+        "title": "Emri i Qëllimit (psh. Banesa e re)", 
+        "target_amount": 25000, 
+        "current_amount": 1200 (nëse përdoruesi thotë se i ka tashmë, përndryshe 0),
+        "icon": "🏠" (zgjidh një ikonë emoji që përshtatet)
+      }
+      
+      2. SHTIM PARASH NË QËLLIM EKZISTUES
+      Fjalë kyçe: "shto tek qellimi", "kursej per", "për banesën".
+      Output JSON:
+      {
+        "action": "add_to_goal",
+        "goal_title": "Emri i Qëllimit (zgjidh nga lista e qëllimeve ekzistuese nëse përshtatet)",
+        "amount": 100
+      }
+      
+      3. TRANSAKSION NORMAL (SHPENZIM OSE TË ARDHURA)
+      Fjalë kyçe: "bleva", "pagova", "shpenzova", "mora rrogën".
       Kategoritë e lejuara: 'Ushqim', 'Transport', 'Qira', 'Argëtim', 'Shëndet', 'Shopping', 'Fatura', 'Paga', 'Te Ardhura', 'Dhurata', 'Tjetër'.
+      Output JSON:
+      {
+        "action": "transaction",
+        "amount": 5.5,
+        "category": "Ushqim",
+        "type": "expense" (ose "income"),
+        "notes": "Përshkrimi i shkurtër"
+      }
       
-      Rregullat:
-      1. Gjej shumën (amount) si numër (p.sh. 5.5).
-      2. Zgjidh kategorinë më të përshtatshme nga lista.
-      3. Përcakto 'type': 'expense' (shpenzim) ose 'income' (të ardhura).
-      4. Krijo një përshkrim të shkurtër (notes) nga teksti.
-      5. Kthe VETËM objektin JSON, pa asnjë tekst shtesë.
-      
-      Shembull:
-      User: "Bleva kafe 2 euro"
-      Output: { "amount": 2, "category": "Ushqim", "type": "expense", "notes": "Kafe" }
+      RREGULL: Kthe VETËM objektin JSON, pa asnjë tekst tjetër.
     `;
 
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -98,21 +126,31 @@ export async function parseTransactionWithAI(userText) {
         'Authorization': `Bearer ${GROQ_API_KEY}`
       },
       body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
+        model: "llama-3.3-70b-versatile", 
         messages: [{ role: "user", content: prompt }],
-        temperature: 0.1, // Shumë preciz
+        temperature: 0.1, // Shumë preciz për JSON
+        max_tokens: 300
       }),
     });
 
     const data = await response.json();
-    const content = data.choices?.[0]?.message?.content;
+    let content = data.choices?.[0]?.message?.content;
+    
+    // Pastrim JSON nëse ka tekst shtesë
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+        content = jsonMatch[0];
+    }
 
-    // Pastrim i përgjigjes nga AI (nganjëherë shton backticks)
-    const jsonString = content.replace(/```json/g, '').replace(/```/g, '').trim();
-    return JSON.parse(jsonString);
+    return JSON.parse(content);
 
   } catch (error) {
-    console.error("AI Parse Error:", error);
+    console.error("Groq Error:", error);
     return null;
   }
+}
+
+export async function parseTransactionWithAI(userText) {
+    // Legacy wrapper for backward compatibility if needed, or just redirect
+    return parseUserIntent(userText, []);
 }

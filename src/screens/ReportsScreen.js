@@ -1,7 +1,7 @@
-import { ArrowDownCircle, ArrowUpCircle, Calendar } from 'lucide-react-native';
-import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Svg, { Circle, G, Line, Path, Rect, Text as SvgText } from 'react-native-svg';
+import { ArrowDownCircle, ArrowUpCircle, Calendar, ChevronLeft, ChevronRight, TrendingDown, TrendingUp, X } from 'lucide-react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Svg, { G, Path, Rect, Text as SvgText } from 'react-native-svg';
 import { getTransactions } from '../api/transactions';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -69,60 +69,86 @@ const SimpleBarChart = ({ income, expense, textColor }) => {
   );
 };
 
-// --- 2. Line Chart (Trendi Mujor - 6 Muajt e Fundit) ---
-const SimpleLineChart = ({ data, textColor, lineColor }) => {
-  // Tani data vjen gjithmonë me 6 muaj, kështu që heqim kontrollin e "S'ka të dhëna"
-  const width = 320;
-  const height = 180;
-  const paddingX = 30;
-  const paddingY = 30;
+// --- 2. Calendar View ---
+const CalendarView = ({ date, transactions, onSelectDay, selectedDay, colors }) => {
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDayObj = new Date(year, month, 1);
+  let startDay = firstDayObj.getDay(); // 0=Sun, 1=Mon
   
-  const maxVal = Math.max(...data.map(d => d.value), 10); // Min max 10 që grafiku mos të duket bosh
-  
-  const points = data.map((d, i) => {
-    const x = (i / (data.length - 1)) * (width - 2 * paddingX) + paddingX;
-    const y = height - (d.value / maxVal) * (height - 2 * paddingY) - paddingY;
-    return { x, y, label: d.label, value: d.value };
-  });
+  // Adjust to make Monday first (0)
+  // Sun(0) -> 6, Mon(1) -> 0
+  startDay = (startDay === 0 ? 6 : startDay - 1);
 
-  let pathD = `M ${points[0].x} ${points[0].y}`;
-  points.slice(1).forEach(p => {
-    pathD += ` L ${p.x} ${p.y}`;
-  });
+  const days = [];
+  for(let i=0; i<startDay; i++) days.push(null);
+  for(let i=1; i<=daysInMonth; i++) days.push(i);
+
+  const weekDays = ['Hë', 'Ma', 'Më', 'En', 'Pr', 'Sh', 'Di'];
+
+  const getDayExpenses = (day) => {
+    if(!day) return 0;
+    return transactions
+      .filter(t => {
+        const d = new Date(t.date);
+        return d.getDate() === day && d.getMonth() === month && d.getFullYear() === year && !['Income', 'Paga', 'Te Ardhura'].includes(t.category);
+      })
+      .reduce((acc, t) => acc + Number(t.amount), 0);
+  };
 
   return (
-    <View style={{ alignItems: 'center', marginVertical: 20 }}>
-      <Svg width={width} height={height + 40}>
-        {/* Vijat horizontale për ndihmë */}
-        <Line x1={paddingX} y1={height - paddingY} x2={width - paddingX} y2={height - paddingY} stroke={textColor} strokeOpacity="0.1" />
-        <Line x1={paddingX} y1={paddingY} x2={width - paddingX} y2={paddingY} stroke={textColor} strokeOpacity="0.1" />
-
-        <Path d={pathD} stroke={lineColor} strokeWidth="3" fill="none" />
-        
-        {points.map((p, i) => (
-          <G key={i}>
-            <Circle cx={p.x} cy={p.y} r="5" fill="white" stroke={lineColor} strokeWidth="2" />
+    <View>
+      <View style={{flexDirection:'row', justifyContent:'space-around', marginBottom: 10}}>
+        {weekDays.map(d => <Text key={d} style={{color: colors.textSecondary, width: 30, textAlign:'center', fontSize: 12}}>{d}</Text>)}
+      </View>
+      <View style={{flexDirection:'row', flexWrap:'wrap'}}>
+        {days.map((day, i) => {
+            const expense = getDayExpenses(day);
+            const hasExpense = expense > 0;
+            const isSelected = selectedDay === day;
             
-            {/* Muaji poshtë */}
-            <SvgText x={p.x} y={height + 15} fill={textColor} fontSize="10" textAnchor="middle">
-              {p.label}
-            </SvgText>
-            
-            {/* Vlera sipër pikës (vetëm nëse > 0 ose është pika e fundit) */}
-            {(p.value > 0 || i === points.length - 1) && (
-                <SvgText x={p.x} y={p.y - 12} fill={textColor} fontSize="10" fontWeight="bold" textAnchor="middle">
-                  {p.value.toFixed(0)}
-                </SvgText>
-            )}
-          </G>
-        ))}
-      </Svg>
+            return (
+                <TouchableOpacity 
+                    key={i} 
+                    disabled={!day}
+                    onPress={() => onSelectDay(day)}
+                    style={{
+                        width: '14.28%', 
+                        aspectRatio: 1, 
+                        justifyContent:'center', 
+                        alignItems:'center',
+                        padding: 2
+                    }}
+                >
+                    {day && (
+                        <View style={{
+                            width: 32, 
+                            height: 32, 
+                            borderRadius: 16, 
+                            justifyContent:'center', 
+                            alignItems:'center',
+                            backgroundColor: isSelected ? colors.primary : (hasExpense ? 'rgba(239, 68, 68, 0.15)' : 'transparent'),
+                        }}>
+                            <Text style={{
+                                color: isSelected ? 'white' : colors.text, 
+                                fontWeight: (isSelected || hasExpense) ? 'bold' : 'normal'
+                            }}>
+                                {day}
+                            </Text>
+                            {hasExpense && !isSelected && <View style={{width:4, height:4, borderRadius:2, backgroundColor:'#EF4444', position:'absolute', bottom: 4}} />}
+                        </View>
+                    )}
+                </TouchableOpacity>
+            );
+        })}
+      </View>
     </View>
   );
 };
 
 // --- 3. Pie Chart ---
-const SimplePieChart = ({ data }) => {
+const SimplePieChart = ({ data, strokeColor = 'white' }) => {
   const total = data.reduce((acc, item) => acc + item.y, 0);
   if (total === 0) return <Text style={{ textAlign: 'center', color: '#999', margin: 20 }}>S'ka të dhëna</Text>;
 
@@ -140,9 +166,64 @@ const SimplePieChart = ({ data }) => {
             const largeArc = sliceAngle > 180 ? 1 : 0;
             const pathData = `M 50 50 L ${x1} ${y1} A 50 50 0 ${largeArc} 1 ${x2} ${y2} Z`;
             startAngle += sliceAngle;
-            return <Path key={index} d={pathData} fill={slice.color} stroke="white" strokeWidth="2" />;
+            return <Path key={index} d={pathData} fill={slice.color} stroke={strokeColor} strokeWidth="2" />;
           })}
         </G>
+      </Svg>
+    </View>
+  );
+};
+
+// --- 4. Weekly Spending Chart ---
+const WeeklySpendingChart = ({ data, textColor, barColor }) => {
+  // Shtojmë 20% buffer tek maxVal që shtylla më e lartë të mos prekë tavanin
+  const maxVal = Math.max(...data.map(d => d.value), 10) * 1.2;
+  const height = 150;
+  const width = 300;
+  const barWidth = 20;
+  const spacing = (width - (data.length * barWidth)) / (data.length + 1);
+
+  return (
+    <View style={{ alignItems: 'center', marginVertical: 10 }}>
+      <Svg width={width} height={height + 30}>
+        {data.map((d, i) => {
+          const barHeight = (d.value / maxVal) * height;
+          const x = spacing + i * (barWidth + spacing);
+          const y = height - barHeight;
+          
+          return (
+            <G key={i}>
+              <Rect
+                x={x}
+                y={y}
+                width={barWidth}
+                height={barHeight}
+                fill={barColor}
+                rx="4"
+              />
+              <SvgText
+                x={x + barWidth / 2}
+                y={height + 20}
+                fill={textColor}
+                fontSize="12"
+                textAnchor="middle"
+              >
+                {d.label}
+              </SvgText>
+              {d.value > 0 && (
+                <SvgText
+                  x={x + barWidth / 2}
+                  y={y - 5}
+                  fill={textColor}
+                  fontSize="10"
+                  textAnchor="middle"
+                >
+                  {d.value.toFixed(0)}
+                </SvgText>
+              )}
+            </G>
+          );
+        })}
       </Svg>
     </View>
   );
@@ -153,6 +234,9 @@ export default function ReportsScreen({ navigation }) {
   const { colors } = useTheme();
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedDay, setSelectedDay] = useState(null);
+  const [showMonthPicker, setShowMonthPicker] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -167,10 +251,38 @@ export default function ReportsScreen({ navigation }) {
     return unsub;
   }, [navigation, user]);
 
+  const changeMonth = (increment) => {
+    const newDate = new Date(selectedDate);
+    newDate.setMonth(newDate.getMonth() + increment);
+    setSelectedDate(newDate);
+    setSelectedDay(null); // Reset selected day when month changes
+  };
+
+  const selectMonth = (monthIndex) => {
+      const newDate = new Date(selectedDate);
+      newDate.setMonth(monthIndex);
+      setSelectedDate(newDate);
+      setSelectedDay(null);
+      setShowMonthPicker(false);
+  };
+
+  const selectYear = (increment) => {
+      const newDate = new Date(selectedDate);
+      newDate.setFullYear(newDate.getFullYear() + increment);
+      setSelectedDate(newDate);
+  };
+
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter(t => {
+      const d = new Date(t.date);
+      return d.getMonth() === selectedDate.getMonth() && d.getFullYear() === selectedDate.getFullYear();
+    });
+  }, [transactions, selectedDate]);
+
   // --- Llogaritjet ---
 
   const chartData = useMemo(() => {
-    const expenses = transactions.filter(t => !['Income', 'Paga', 'Te Ardhura'].includes(t.category));
+    const expenses = filteredTransactions.filter(t => !['Income', 'Paga', 'Te Ardhura'].includes(t.category));
     const byCat = expenses.reduce((acc, t) => {
       acc[t.category] = (acc[t.category] || 0) + Number(t.amount);
       return acc;
@@ -183,61 +295,172 @@ export default function ReportsScreen({ navigation }) {
         color: colors[i % colors.length]
       }))
       .sort((a, b) => b.y - a.y);
-  }, [transactions]);
+  }, [filteredTransactions]);
 
-  // 2. Trend Data (Fix: Gjenerojmë 6 muajt e fundit edhe nëse janë bosh)
-  const monthlyTrendData = useMemo(() => {
-    const expenses = transactions.filter(t => !['Income', 'Paga', 'Te Ardhura'].includes(t.category));
-    
-    // 1. Grupojmë transaksionet ekzistuese
-    const grouped = {};
-    expenses.forEach(t => {
-      const date = new Date(t.date);
-      const monthKey = `${date.getMonth() + 1}/${date.getFullYear().toString().substr(2,2)}`; // "11/25"
-      grouped[monthKey] = (grouped[monthKey] || 0) + Number(t.amount);
+  const selectedDayTransactions = useMemo(() => {
+    if (!selectedDay) return [];
+    return filteredTransactions.filter(t => {
+        const d = new Date(t.date);
+        return d.getDate() === selectedDay;
     });
+  }, [filteredTransactions, selectedDay]);
 
-    // 2. Gjenerojmë listën e 6 muajve të fundit (që të mos dalë bosh)
-    const last6Months = [];
-    for (let i = 5; i >= 0; i--) {
-        const d = new Date();
-        d.setMonth(d.getMonth() - i);
-        const key = `${d.getMonth() + 1}/${d.getFullYear().toString().substr(2,2)}`;
-        last6Months.push({
-            label: key,
-            value: grouped[key] || 0 // Nëse s'ka të dhëna, vër 0
-        });
-    }
-
-    return last6Months;
-  }, [transactions]);
-
-  const totalExpense = transactions
+  const totalExpense = filteredTransactions
     .filter(t => !['Income', 'Paga', 'Te Ardhura'].includes(t.category))
     .reduce((acc, t) => acc + Number(t.amount), 0);
 
-  const totalIncome = transactions
+  const totalIncome = filteredTransactions
     .filter(t => ['Income', 'Paga', 'Te Ardhura'].includes(t.category))
     .reduce((acc, t) => acc + Number(t.amount), 0);
 
   const netBalance = totalIncome - totalExpense;
 
   const dailyAverage = useMemo(() => {
-      const currentMonthExpenses = transactions.filter(t => {
-          const d = new Date(t.date);
-          const now = new Date();
-          return !['Income', 'Paga', 'Te Ardhura'].includes(t.category) && 
-                 d.getMonth() === now.getMonth() && 
-                 d.getFullYear() === now.getFullYear();
+      const currentMonthExpenses = filteredTransactions.filter(t => {
+          return !['Income', 'Paga', 'Te Ardhura'].includes(t.category);
       });
       const total = currentMonthExpenses.reduce((acc, t) => acc + Number(t.amount), 0);
-      const dayOfMonth = new Date().getDate(); 
-      return dayOfMonth > 0 ? total / dayOfMonth : 0;
-  }, [transactions]);
+      
+      // If selected month is current month, divide by today's date.
+      // If selected month is past, divide by days in month.
+      const now = new Date();
+      let days = 1;
+      if (selectedDate.getMonth() === now.getMonth() && selectedDate.getFullYear() === now.getFullYear()) {
+          days = now.getDate();
+      } else {
+          days = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0).getDate();
+      }
+      
+      return days > 0 ? total / days : 0;
+  }, [filteredTransactions, selectedDate]);
+
+  // --- New: Weekly Breakdown Data ---
+  const weeklyData = useMemo(() => {
+    const days = ['Di', 'Hë', 'Ma', 'Më', 'En', 'Pr', 'Sh']; // Sunday to Saturday
+    const expenses = filteredTransactions.filter(t => !['Income', 'Paga', 'Te Ardhura'].includes(t.category));
+    
+    const grouped = new Array(7).fill(0);
+    
+    expenses.forEach(t => {
+        const d = new Date(t.date);
+        const dayIndex = d.getDay(); // 0 = Sunday, 6 = Saturday
+        grouped[dayIndex] += Number(t.amount);
+    });
+
+    // Shift so Monday is first if preferred, but standard getDay() is 0=Sun. 
+    // Let's keep 0=Sun (Di) as per array above.
+    return days.map((label, i) => ({
+        label,
+        value: grouped[i]
+    }));
+  }, [filteredTransactions]);
+
+  // --- New: Monthly Comparison ---
+  const comparisonData = useMemo(() => {
+    const prevDate = new Date(selectedDate);
+    prevDate.setMonth(selectedDate.getMonth() - 1);
+    
+    const prevMonthTx = transactions.filter(t => {
+        const d = new Date(t.date);
+        return d.getMonth() === prevDate.getMonth() && d.getFullYear() === prevDate.getFullYear();
+    });
+
+    const prevExpense = prevMonthTx
+        .filter(t => !['Income', 'Paga', 'Te Ardhura'].includes(t.category))
+        .reduce((acc, t) => acc + Number(t.amount), 0);
+
+    const diff = totalExpense - prevExpense;
+    const percent = prevExpense > 0 ? (diff / prevExpense) * 100 : 0;
+    
+    return { prevExpense, diff, percent };
+  }, [transactions, selectedDate, totalExpense]);
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
-      <Text style={[styles.headerTitle, { color: colors.text }]}>Pasqyra Financiare</Text>
+      <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 40, marginBottom: 20}}>
+          <Text style={[styles.headerTitle, { color: colors.text, marginTop: 0, marginBottom: 0 }]}>Pasqyra Financiare</Text>
+      </View>
+
+      <View style={{flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 20}}>
+          <View style={{flexDirection: 'row', alignItems: 'center', backgroundColor: colors.card, borderRadius: 20, padding: 5}}>
+              <TouchableOpacity onPress={() => changeMonth(-1)} style={{padding: 5}}>
+                  <ChevronLeft size={24} color={colors.text} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setShowMonthPicker(true)}>
+                <Text style={{color: colors.text, fontWeight: 'bold', marginHorizontal: 10, minWidth: 80, textAlign: 'center'}}>
+                    {selectedDate.toLocaleDateString('sq-AL', { month: 'long', year: 'numeric' }).replace(/^\w/, c => c.toUpperCase())}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => changeMonth(1)} style={{padding: 5}}>
+                  <ChevronRight size={24} color={colors.text} />
+              </TouchableOpacity>
+          </View>
+      </View>
+
+      {/* Month Picker Modal */}
+      <Modal visible={showMonthPicker} transparent animationType="fade">
+        <View style={{flex:1, backgroundColor:'rgba(0,0,0,0.5)', justifyContent:'center', alignItems:'center'}}>
+            <View style={{width:'85%', backgroundColor: colors.card, borderRadius: 16, padding: 20}}>
+                <View style={{flexDirection:'row', justifyContent:'space-between', alignItems:'center', marginBottom: 20}}>
+                    <Text style={{fontSize: 18, fontWeight:'bold', color: colors.text}}>Zgjidh Muajin</Text>
+                    <TouchableOpacity onPress={() => setShowMonthPicker(false)}>
+                        <X size={24} color={colors.text} />
+                    </TouchableOpacity>
+                </View>
+
+                <View style={{flexDirection:'row', justifyContent:'space-between', alignItems:'center', marginBottom: 20, backgroundColor: colors.background, padding: 10, borderRadius: 12}}>
+                    <TouchableOpacity onPress={() => selectYear(-1)}>
+                        <ChevronLeft size={24} color={colors.text} />
+                    </TouchableOpacity>
+                    <Text style={{fontSize: 18, fontWeight:'bold', color: colors.text}}>{selectedDate.getFullYear()}</Text>
+                    <TouchableOpacity onPress={() => selectYear(1)}>
+                        <ChevronRight size={24} color={colors.text} />
+                    </TouchableOpacity>
+                </View>
+
+                <View style={{flexDirection:'row', flexWrap:'wrap', justifyContent:'space-between'}}>
+                    {Array.from({length: 12}).map((_, i) => {
+                        const isSelected = i === selectedDate.getMonth();
+                        const monthName = new Date(2024, i, 1).toLocaleDateString('sq-AL', { month: 'short' });
+                        return (
+                            <TouchableOpacity 
+                                key={i} 
+                                onPress={() => selectMonth(i)}
+                                style={{
+                                    width: '30%', 
+                                    paddingVertical: 12, 
+                                    marginBottom: 10, 
+                                    borderRadius: 8, 
+                                    backgroundColor: isSelected ? colors.primary : colors.background,
+                                    alignItems:'center'
+                                }}
+                            >
+                                <Text style={{color: isSelected ? 'white' : colors.text, fontWeight:'bold', textTransform:'capitalize'}}>
+                                    {monthName}
+                                </Text>
+                            </TouchableOpacity>
+                        );
+                    })}
+                </View>
+            </View>
+        </View>
+      </Modal>
+
+      {/* Comparison Card */}
+      <View style={[styles.card, { backgroundColor: colors.card, padding: 15, flexDirection:'row', alignItems:'center', justifyContent:'space-between' }]}>
+         <View>
+             <Text style={{color: colors.textSecondary, fontSize: 12}}>Krahasuar me muajin e kaluar</Text>
+             <Text style={{color: colors.text, fontWeight:'bold', fontSize: 16}}>
+                 {comparisonData.diff > 0 ? '+' : ''}€ {comparisonData.diff.toFixed(2)} ({comparisonData.percent.toFixed(1)}%)
+             </Text>
+         </View>
+         <View style={{flexDirection:'row', alignItems:'center', gap: 5, backgroundColor: comparisonData.diff > 0 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)', padding: 8, borderRadius: 12}}>
+             {comparisonData.diff > 0 ? <TrendingUp size={20} color="#EF4444" /> : <TrendingDown size={20} color="#10B981" />}
+             <Text style={{color: comparisonData.diff > 0 ? '#EF4444' : '#10B981', fontWeight:'bold'}}>
+                 {comparisonData.diff > 0 ? 'Më shumë' : 'Më pak'}
+             </Text>
+         </View>
+      </View>
 
       {/* Summary Cards Row */}
       <View style={styles.summaryRow}>
@@ -279,11 +502,43 @@ export default function ReportsScreen({ navigation }) {
         {loading ? <ActivityIndicator color={colors.primary} /> : <SimpleBarChart income={totalIncome} expense={totalExpense} textColor={colors.text} />}
       </View>
 
-      {/* Monthly Trend Line Chart */}
+      {/* Calendar View */}
       <View style={[styles.card, { backgroundColor: colors.card }]}>
-        <Text style={[styles.cardTitle, { color: colors.text }]}>Trendi 6-Mujor (Shpenzimet)</Text>
+        <Text style={[styles.cardTitle, { color: colors.text }]}>Kalendari i Shpenzimeve</Text>
+        <CalendarView 
+            date={selectedDate} 
+            transactions={filteredTransactions} 
+            onSelectDay={setSelectedDay} 
+            selectedDay={selectedDay}
+            colors={colors}
+        />
+        
+        {selectedDay && (
+            <View style={{marginTop: 20, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 15}}>
+                <Text style={{fontWeight:'bold', color: colors.text, marginBottom: 10}}>
+                    Transaksionet më {selectedDay} {selectedDate.toLocaleDateString('sq-AL', { month: 'long' })}
+                </Text>
+                {selectedDayTransactions.length === 0 ? (
+                    <Text style={{color: colors.textSecondary}}>S'ka transaksione në këtë datë.</Text>
+                ) : (
+                    selectedDayTransactions.map(t => (
+                        <View key={t.id} style={{flexDirection:'row', justifyContent:'space-between', marginBottom: 8}}>
+                            <Text style={{color: colors.text}}>{t.category}</Text>
+                            <Text style={{fontWeight:'bold', color: ['Income','Paga','Te Ardhura'].includes(t.category) ? '#10B981' : '#EF4444'}}>
+                                {['Income','Paga','Te Ardhura'].includes(t.category) ? '+' : '-'}€{t.amount}
+                            </Text>
+                        </View>
+                    ))
+                )}
+            </View>
+        )}
+      </View>
+
+      {/* Weekly Breakdown Chart */}
+      <View style={[styles.card, { backgroundColor: colors.card }]}>
+        <Text style={[styles.cardTitle, { color: colors.text }]}>Shpenzimet sipas Ditëve</Text>
         {loading ? <ActivityIndicator color={colors.primary} /> : 
-            <SimpleLineChart data={monthlyTrendData} textColor={colors.text} lineColor={colors.primary} />
+            <WeeklySpendingChart data={weeklyData} textColor={colors.text} barColor={colors.primary} />
         }
       </View>
 
@@ -295,7 +550,7 @@ export default function ReportsScreen({ navigation }) {
           <ActivityIndicator color={colors.primary} />
         ) : (
           <>
-            <SimplePieChart data={chartData} />
+            <SimplePieChart data={chartData} strokeColor={colors.card} />
             
             <View style={{ marginTop: 10 }}>
                 {chartData.map((item, index) => (

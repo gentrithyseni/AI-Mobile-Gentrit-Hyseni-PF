@@ -1,14 +1,13 @@
-import * as ImagePicker from 'expo-image-picker';
-import { Camera, LogOut, Save } from 'lucide-react-native';
+import { Bell, Camera, CircleHelp, Globe, LogOut, Save } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import supabaseClient from '../config/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 
 export default function ProfileScreen() {
   const { user, signOut } = useAuth();
-  const { colors } = useTheme();
+  const { colors, currency, setAppCurrency } = useTheme();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -17,6 +16,9 @@ export default function ProfileScreen() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   
+  // Settings State
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
@@ -286,6 +288,58 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Settings Section */}
+        <View style={[styles.formSection, { backgroundColor: colors.card }]}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Cilësimet</Text>
+            
+            <View style={[styles.settingRow, { borderBottomColor: colors.border }]}>
+                <View style={{flexDirection:'row', alignItems:'center', gap: 10}}>
+                    <Bell size={20} color={colors.text} />
+                    <Text style={{fontSize: 16, color: colors.text}}>Njoftimet</Text>
+                </View>
+                <Switch 
+                    value={notificationsEnabled} 
+                    onValueChange={setNotificationsEnabled}
+                    trackColor={{ false: "#767577", true: colors.primary }}
+                />
+            </View>
+
+            <View style={[styles.settingRow, { borderBottomColor: colors.border, borderBottomWidth: 0 }]}>
+                <View style={{flexDirection:'row', alignItems:'center', gap: 10}}>
+                    <Globe size={20} color={colors.text} />
+                    <Text style={{fontSize: 16, color: colors.text}}>Monedha</Text>
+                </View>
+                <View style={{flexDirection:'row', gap: 5}}>
+                    {['€', '$', 'L'].map(c => (
+                        <TouchableOpacity 
+                            key={c} 
+                            onPress={() => setAppCurrency(c)}
+                            style={{
+                                paddingHorizontal: 10, 
+                                paddingVertical: 5, 
+                                borderRadius: 8, 
+                                backgroundColor: currency === c ? colors.primary : (colors.background)
+                            }}
+                        >
+                            <Text style={{color: currency === c ? 'white' : colors.text, fontWeight:'bold'}}>{c}</Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
+            </View>
+        </View>
+
+        {/* Support Section */}
+        <View style={[styles.formSection, { backgroundColor: colors.card }]}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Mbështetje</Text>
+            <TouchableOpacity 
+                onPress={() => Alert.alert('Rreth Aplikacionit', 'Personal Finance AI v1.0.0\nZhvilluar nga Gentrit Hyseni')}
+                style={{flexDirection:'row', alignItems:'center', gap: 10, paddingVertical: 10}}
+            >
+                <CircleHelp size={20} color={colors.text} />
+                <Text style={{fontSize: 16, color: colors.text}}>Rreth Aplikacionit</Text>
+            </TouchableOpacity>
+        </View>
+
         <TouchableOpacity style={[styles.logoutBtn, { backgroundColor: colors.card }]} onPress={signOut}>
           <LogOut size={20} color="#EF4444" />
           <Text style={styles.logoutText}>Dil nga llogaria</Text>
@@ -316,6 +370,8 @@ const styles = StyleSheet.create({
   label: { fontSize: 14, marginBottom: 5, fontWeight: '500' },
   input: { borderWidth: 1, borderRadius: 8, padding: 12, fontSize: 16 },
   
+  settingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1 },
+
   saveBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 16, borderRadius: 12, marginTop: 10 },
   saveBtnText: { color: 'white', fontWeight: 'bold', marginLeft: 8, fontSize: 16 },
 

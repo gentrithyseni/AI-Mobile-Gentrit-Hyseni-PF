@@ -146,8 +146,23 @@ vetem duhet qe buttoni sign out te jete edhe tek faqja raporte edhe tek profili 
 38.edhe reports,ndreqi pak shtoje naj sen,se jane pak te thjeshte.;Po ashtu tek te ardhurat vs Shpenzime ndreqi qe te shfaqet edhe shuma e te ardhurave,sepse nuk shfaqet;shuma e shpenzimeve shfaqet por del si keq psh 288.05 eshte tash,e del 288.05 si me nje vije ne mes dhe 88 eshte si bashke,si i mbishkruar.
 39.tash e dallova,shenja e EURO po del ne mes te numrave psh 288.05 E po del 28E8.05,edhe po mbishkruhet,serish dmth dul,nuk u ndreq
 40.e kom bo me lshu jokes tek gemini.js,por psh po e shkruan ne fillim psh,"Ofendon,duke shpenzuar aq shume per ushqim,mund te hapesh restaurantin tend,emoji". Qata ofendon mos te shfaqet,vetem te jete joke,humori.
-41.
-42.
-43.
-44.
-45.
+41.Bonu gati. Tek logini,te shfaqet nje me sy qe tregon passwordin ,dmth me u pa passwordi nese dua une normal.Kur e gaboj passwordin,ne telefon del ky output qe invalid login credintials poshte ,te mos shfaqet ajo por te shfaqet nje njoftim ose alert.
+    Tek homescreen te ndreqen synimet/qellimet,une ta krijoj nje qellim qe dua te arrij,te vendos une shumen qe dua etj ,po e kupton besoj kontekstin ketu.Tek grafikat te krijohet nje qe tregon statistika per nje muaj sa ke hargju,ku ke hargju,ne cilat kategori etj.
+    Tek kategorite e shpenzimeve dhe te ardhurave,te jete nje opsion ku une shtoj kategori,dhe ajo kategori ruhet gjithmone.
+    Tek kategorite psh ushqim,te jete nje figure e nje ushqimi ose food,pra te dallohen kategorite permes figrurave,psh transportation te jete nje autobus,etj,po ashtu tek shpenzimet te jete edhe kategoria Cash ose Money.
+    Nese ke edhe ti ndonje ide,shtoje dhe pastaj e aprovoj une ose jo.Vazhdo me keto.
+42.po vazhdo,dhe me trego cfare te shtoj ne supabase une
+43.beje qe nese vendosi psh shpenzim tek qellimi,me u shtu shuma,psh e kom kriju une nje qellim telefon i ri,nese tek shto shpenzim,e preku psh ikonon e telefonit ose qellimin qe duhet te jete ndoshta,te shtoj nje shume te caktuar.
+44.e ke bere si defualt ushqim,tash kur e preka me e shtu tek telefoni,normal ndryshoj shuma teke qellimi,por po del shpenzimi si ushqim,e ke bere te parazgjedhur.
+44.beje qe nese vendosi psh shpenzim tek qellimi,me u shtu shuma,psh e kom kriju une nje qellim telefon i ri,nese tek shto shpenzim,e preku psh ikonon e telefonit ose qellimin qe duhet te jete ndoshta,te shtoj nje shume te caktuar.
+45.shtoj edhe disa kategori psh edukim qe e kom kriju une boje me shkolle,bone nje telefon,,bone nje rroba,bone teknologji,etj.edhe tek te ardhurat psh bonus ose part-time.Lejo edhe me fshi kategori ne dyjat
+46.duhet me bo "update" edhe groq,qe me leju psh me shtu shpenzime tek qellimet/synimet ose me leju me kriju qellim-psh une ja jepi promptin "mendova te filloj mbledh para per nje banese ,e ka qmimin 25000 euro,tani per tani i kam 1200 " edhe AI asistenti e krijon nje qellim te ri me emrin psh banesa e re-e qet shumen e synuar 25000 euro,dhe shumen aktuale 1200 eurp.pastaj une mund te shtoj para tek ky qellim.psh i thom tek chati-shtoj 100 euro tek qellimi banesa e re edhe ky i shton.a po mkupton ?
+47.Hin prej fillimi deri tek fundi,bone test ose cka bon ti.Mendo gjera qe duhet te shtohen,qe mund te shtohen,qe ja vlen me i shtu,qe mendon se e permiresojne aplikacionin.Cka mendon se duhet bere add ?
+48.1. Kërkimi dhe Filtrimi (Search & Filter) 🔍, 2. Buxheti Mujor (Budgeting) 💰,shto keto dyja menjehere,pra.
+49.Shume mire tash.Tash fshije ata Trendi 6 mujor dicka qe eshte.Krijo nja qe psh shfaqe kalendarin e muajit dhe shpenzimet ne dite ,psh muaji nentor,preket butoni qe shfaq kalendarin e maujit nentor,edhe dalin ditet prej 1 deri 30,edhe shfaqen shpenzimet ne secilen dite.Behet normal nje dallim ne cilat dite ka pas hargjime e ne cilat jo.Po ashtu kur klikohet dita,te shfaqen transaksionet e asaj dite.
+50.shume mire gjithcka,veq edhe tek grafiku ,i rrumbullaketi,diqysh vijat spi doken qaq mire.
+51.
+52.
+53.
+54.
+55.

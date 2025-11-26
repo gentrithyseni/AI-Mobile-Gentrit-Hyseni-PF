@@ -1,13 +1,15 @@
-import { BrainCircuit, LogOut, Moon, PlusCircle, Sparkles, Sun, Target, TrendingDown, TrendingUp, Wallet } from 'lucide-react-native';
+import { BrainCircuit, LogOut, Moon, PiggyBank, PlusCircle, Sparkles, Sun, Target, TrendingDown, TrendingUp, Wallet } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Svg, { G, Path } from 'react-native-svg';
+import { getGoals } from '../api/goals';
 import { getFinancialAdvice } from '../api/groq';
 import { getTransactions } from '../api/transactions';
+import { CATEGORY_ICONS } from '../constants/categories';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 
-const SimplePieChart = ({ data }) => {
+const SimplePieChart = ({ data, strokeColor = 'white' }) => {
   const total = data.reduce((acc, item) => acc + item.y, 0);
   if (total === 0) return <Text style={{textAlign:'center', color:'#999', margin: 20}}>S'ka të dhëna për grafikun</Text>;
 
@@ -25,7 +27,7 @@ const SimplePieChart = ({ data }) => {
             const largeArc = sliceAngle > 180 ? 1 : 0;
             const pathData = `M 50 50 L ${x1} ${y1} A 50 50 0 ${largeArc} 1 ${x2} ${y2} Z`;
             startAngle += sliceAngle;
-            return <Path key={index} d={pathData} fill={slice.color} stroke="white" strokeWidth="2" />;
+            return <Path key={index} d={pathData} fill={slice.color} stroke={strokeColor} strokeWidth="2" />;
           })}
         </G>
       </Svg>
@@ -43,15 +45,11 @@ const SimplePieChart = ({ data }) => {
 
 export default function HomeScreen({ navigation }) {
   const { user, signOut } = useAuth();
-  const { colors, isDarkMode, toggleTheme } = useTheme();
+  const { colors, isDarkMode, toggleTheme, currency } = useTheme();
   const [transactions, setTransactions] = useState([]);
+  const [goals, setGoals] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [aiAdvice, setAiAdvice] = useState({ text: 'Duke analizuar...', loading: true });
-
-  const goals = [
-    { id: 1, title: 'Laptop', target: 1500, current: 450, icon: '💻', color: '#3B82F6' },
-    { id: 2, title: 'Pushime', target: 800, current: 200, icon: '🏖️', color: '#F97316' },
-  ];
 
   const handleSignOut = async () => {
     try {
@@ -65,8 +63,13 @@ export default function HomeScreen({ navigation }) {
     if (!user) return;
     try {
       setRefreshing(true);
-      const tx = await getTransactions(user.id);
+      const [tx, fetchedGoals] = await Promise.all([
+        getTransactions(user.id),
+        getGoals(user.id)
+      ]);
+      
       setTransactions(tx || []);
+      setGoals(fetchedGoals || []);
       
       if (tx && tx.length > 0) {
         const totalIncome = tx.filter(t => ['Paga', 'Income', 'Te Ardhura'].includes(t.category)).reduce((sum, t) => sum + Number(t.amount), 0);
@@ -129,7 +132,7 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.headerTop}>
            <Wallet size={80} color="rgba(255,255,255,0.1)" style={{position:'absolute', right: 0, top: -10}} />
            <Text style={styles.balanceLabel}>Bilanci Aktual</Text>
-           <Text style={styles.balanceValue}>€ {totals.balance.toFixed(2)}</Text>
+           <Text style={styles.balanceValue}>{currency} {totals.balance.toFixed(2)}</Text>
         </View>
         <View style={styles.statsRow}>
            <View style={styles.statBox}>
@@ -138,7 +141,7 @@ export default function HomeScreen({ navigation }) {
               </View>
               <View>
                  <Text style={styles.statLabel}>Të Ardhura</Text>
-                 <Text style={styles.statValue}>€ {totals.income.toFixed(2)}</Text>
+                 <Text style={styles.statValue}>{currency} {totals.income.toFixed(2)}</Text>
               </View>
            </View>
            <View style={styles.statBox}>
@@ -147,7 +150,7 @@ export default function HomeScreen({ navigation }) {
               </View>
               <View>
                  <Text style={styles.statLabel}>Shpenzime</Text>
-                 <Text style={styles.statValue}>€ {totals.expense.toFixed(2)}</Text>
+                 <Text style={styles.statValue}>{currency} {totals.expense.toFixed(2)}</Text>
               </View>
            </View>
         </View>
@@ -169,34 +172,79 @@ export default function HomeScreen({ navigation }) {
         </View>
 
         <View style={styles.section}>
-            <View style={{flexDirection:'row', alignItems:'center', marginBottom:10}}>
-                <Target size={30} color="#F59E0B" />
-                <Text style={[styles.sectionTitle, { color: colors.text }]}> Synimet</Text>
+            <View style={{flexDirection:'row', alignItems:'center', justifyContent: 'space-between', marginBottom:10, paddingRight: 20}}>
+                <View style={{flexDirection:'row', alignItems:'center'}}>
+                    <Target size={30} color="#F59E0B" />
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}> Synimet</Text>
+                </View>
+                <TouchableOpacity onPress={() => navigation.navigate('AddGoal')}>
+                    <PlusCircle size={24} color={colors.primary} />
+                </TouchableOpacity>
             </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{paddingLeft: 20}}>
-                {goals.map(g => {
-                   const pct = Math.min(100, Math.round((g.current/g.target)*100));
-                   return (
-                     <View key={g.id} style={[styles.goalCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                        <View style={{flexDirection:'row', justifyContent:'space-between'}}>
-                           <Text style={{fontSize:20}}>{g.icon}</Text>
-                           <Text style={{fontSize:15, fontWeight:'bold', backgroundColor: isDarkMode ? '#374151' : '#F3F4F6', color: colors.text, padding:3, borderRadius:5}}>{pct}%</Text>
-                        </View>
-                        <Text style={[styles.goalTitle, { color: colors.text }]}>{g.title}</Text>
-                        <Text style={styles.goalSub}>€{g.current} / €{g.target}</Text>
-                        <View style={{height:4, backgroundColor: isDarkMode ? '#374151' : '#E5E7EB', borderRadius:2, marginTop:5}}>
-                           <View style={{width:`${pct}%`, backgroundColor: g.color, height:4, borderRadius:2}} />
-                        </View>
-                     </View>
-                   );
-                })}
-            </ScrollView>
+            {goals.length === 0 ? (
+              <Text style={{marginLeft: 20, color: colors.textSecondary}}>Nuk keni shtuar asnjë synim.</Text>
+            ) : (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{paddingLeft: 20}}>
+                  {goals.map(g => {
+                     const pct = Math.min(100, Math.round((g.current_amount/g.target_amount)*100));
+                     return (
+                       <TouchableOpacity 
+                          key={g.id} 
+                          onPress={() => navigation.navigate('AddGoal', { goal: g })}
+                          style={[styles.goalCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+                       >
+                          <View style={{flexDirection:'row', justifyContent:'space-between'}}>
+                             <Text style={{fontSize:20}}>{g.icon || '🎯'}</Text>
+                             <Text style={{fontSize:15, fontWeight:'bold', backgroundColor: isDarkMode ? '#374151' : '#F3F4F6', color: colors.text, padding:3, borderRadius:5}}>{pct}%</Text>
+                          </View>
+                          <Text style={[styles.goalTitle, { color: colors.text }]}>{g.title}</Text>
+                          <Text style={styles.goalSub}>€{g.current_amount} / €{g.target_amount}</Text>
+                          <View style={{height:4, backgroundColor: isDarkMode ? '#374151' : '#E5E7EB', borderRadius:2, marginTop:5}}>
+                             <View style={{width:`${pct}%`, backgroundColor: g.color || colors.primary, height:4, borderRadius:2}} />
+                          </View>
+                       </TouchableOpacity>
+                     );
+                  })}
+              </ScrollView>
+            )}
+        </View>
+
+        {/* Buxheti Section */}
+        <View style={styles.section}>
+            <TouchableOpacity 
+              onPress={() => navigation.navigate('Budget')}
+              style={{
+                marginHorizontal: 20, 
+                padding: 15, 
+                backgroundColor: colors.card, 
+                borderRadius: 16, 
+                flexDirection: 'row', 
+                alignItems: 'center', 
+                justifyContent: 'space-between',
+                shadowColor: '#000',
+                shadowOpacity: 0.05,
+                elevation: 2
+              }}
+            >
+               <View style={{flexDirection:'row', alignItems:'center', gap: 15}}>
+                  <View style={{padding: 10, backgroundColor: 'rgba(124, 58, 237, 0.1)', borderRadius: 12}}>
+                    <PiggyBank size={24} color="#7C3AED" />
+                  </View>
+                  <View>
+                    <Text style={{fontSize: 16, fontWeight: 'bold', color: colors.text}}>Buxheti Mujor</Text>
+                    <Text style={{fontSize: 12, color: colors.textSecondary}}>Menaxho limitet e shpenzimeve</Text>
+                  </View>
+               </View>
+               <View style={{padding: 5}}>
+                  <Text style={{color: colors.primary, fontWeight: '600'}}>Hape</Text>
+               </View>
+            </TouchableOpacity>
         </View>
 
         <View style={styles.section}>
              <Text style={[styles.sectionTitle, {marginLeft: 20, color: colors.text}]}>Shpenzimet sipas Kategorisë</Text>
              <View style={[styles.chartCard, { backgroundColor: colors.card }]}>
-                <SimplePieChart data={chartData} />
+                <SimplePieChart data={chartData} strokeColor={colors.card} />
              </View>
         </View>
 
@@ -215,15 +263,19 @@ export default function HomeScreen({ navigation }) {
            
            {transactions.length === 0 && <Text style={{marginLeft:20, color: colors.textSecondary}}>Nuk ka transaksione ende.</Text>}
 
-           {transactions.slice(0, 5).map(item => (
+           {transactions.slice(0, 5).map(item => {
+             const IconComponent = CATEGORY_ICONS[item.category]?.icon || CATEGORY_ICONS['Tjetër'].icon;
+             const iconColor = CATEGORY_ICONS[item.category]?.color || CATEGORY_ICONS['Tjetër'].color;
+
+             return (
              <TouchableOpacity 
                 key={item.id} 
                 style={[styles.txItem, { backgroundColor: colors.card }]}
                 onPress={() => navigation.navigate('AddTransaction', { transaction: item })}
              >
                 <View style={{flexDirection:'row', alignItems:'center'}}>
-                   <View style={[styles.txIcon, {backgroundColor: ['Income','Paga','Te Ardhura'].includes(item.category) ? (isDarkMode ? 'rgba(16, 185, 129, 0.2)' : '#D1FAE5') : (isDarkMode ? 'rgba(239, 68, 68, 0.2)' : '#FEE2E2')}]}>
-                      {['Income','Paga','Te Ardhura'].includes(item.category) ? <TrendingUp size={16} color="#059669"/> : <TrendingDown size={16} color="#DC2626"/>}
+                   <View style={[styles.txIcon, {backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#F3F4F6'}]}>
+                      <IconComponent size={20} color={iconColor} />
                    </View>
                    <View>
                       <Text style={[styles.txCategory, { color: colors.text }]}>{item.category}</Text>
@@ -234,7 +286,8 @@ export default function HomeScreen({ navigation }) {
                    {['Income','Paga','Te Ardhura'].includes(item.category) ? '+' : '-'} €{item.amount}
                 </Text>
              </TouchableOpacity>
-           ))}
+             );
+           })}
         </View>
       </ScrollView>
 
