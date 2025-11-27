@@ -166,7 +166,7 @@ const SimplePieChart = ({ data, strokeColor = 'white' }) => {
             const largeArc = sliceAngle > 180 ? 1 : 0;
             const pathData = `M 50 50 L ${x1} ${y1} A 50 50 0 ${largeArc} 1 ${x2} ${y2} Z`;
             startAngle += sliceAngle;
-            return <Path key={index} d={pathData} fill={slice.color} stroke={strokeColor} strokeWidth="2" />;
+            return <Path key={index} d={pathData} fill={slice.color} stroke={strokeColor} strokeWidth="2" strokeLinejoin="round" />;
           })}
         </G>
       </Svg>
@@ -218,7 +218,7 @@ const WeeklySpendingChart = ({ data, textColor, barColor }) => {
                   fontSize="10"
                   textAnchor="middle"
                 >
-                  {d.value.toFixed(0)}
+                  {d.value.toFixed(2)}
                 </SvgText>
               )}
             </G>

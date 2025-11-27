@@ -161,7 +161,9 @@ vetem duhet qe buttoni sign out te jete edhe tek faqja raporte edhe tek profili 
 48.1. Kërkimi dhe Filtrimi (Search & Filter) 🔍, 2. Buxheti Mujor (Budgeting) 💰,shto keto dyja menjehere,pra.
 49.Shume mire tash.Tash fshije ata Trendi 6 mujor dicka qe eshte.Krijo nja qe psh shfaqe kalendarin e muajit dhe shpenzimet ne dite ,psh muaji nentor,preket butoni qe shfaq kalendarin e maujit nentor,edhe dalin ditet prej 1 deri 30,edhe shfaqen shpenzimet ne secilen dite.Behet normal nje dallim ne cilat dite ka pas hargjime e ne cilat jo.Po ashtu kur klikohet dita,te shfaqen transaksionet e asaj dite.
 50.shume mire gjithcka,veq edhe tek grafiku ,i rrumbullaketi,diqysh vijat spi doken qaq mire.
-51.
+51.kqyre qysh po doket chart,si nje vije me e shkurter tek pjesa e gjelbert dhe nje vije si therrese tek e vjollca,a mundesh me e rregullu.
+    The following packages should be updated for best compatibility with the installed expo version:
+    expo@54.0.24 - expected version: ~54.0.25.Your project may not work correctly until you install the expected versions of the packages. edhe qita a duhet me instalu,a ndikon tek projekti
 52.
 53.
 54.
