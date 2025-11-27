@@ -75,7 +75,7 @@ export const AuthProvider = ({ children }) => {
       }
       
       // If we receive a session but user is null, ensure we clear user
-      if (!session && user) {
+      if (!session) {
         setUser(null);
       }
       
@@ -86,7 +86,7 @@ export const AuthProvider = ({ children }) => {
       mounted = false;
       subscription?.unsubscribe();
     };
-  }, []);
+  }, []); // user dependency not needed here as we listen to auth state changes
 
   const signUp = async ({ email, password, username }) => {
     const { data, error } = await supabaseClient.auth.signUp({ email, password });

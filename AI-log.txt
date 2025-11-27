@@ -164,7 +164,29 @@ vetem duhet qe buttoni sign out te jete edhe tek faqja raporte edhe tek profili 
 51.kqyre qysh po doket chart,si nje vije me e shkurter tek pjesa e gjelbert dhe nje vije si therrese tek e vjollca,a mundesh me e rregullu.
     The following packages should be updated for best compatibility with the installed expo version:
     expo@54.0.24 - expected version: ~54.0.25.Your project may not work correctly until you install the expected versions of the packages. edhe qita a duhet me instalu,a ndikon tek projekti
-52.
-53.
-54.
-55.
+52.Cka mendon,a mundemi me e shtu nje sound effect ,psh per shtim shpenzimesh ose te ardhurave etj,po ashtu nje thousands seperator
+    edhe tek shtimi nje calculator qe llogarit,dmth mbledhje zbritje,psh e shkruaj kam blere 10 euro por i kom fitu 3 euro e 50,edhe behet 10-3.50 = 6.5 shpenzim,a pe kupton logjiken.
+53.e qyky problemi tek tsconfig.json
+    [{
+    "resource": "/c:/Users/Lenovo/Desktop/AAB/Viti 3 Semestri 5/Programimi për Pajisje Mobile/AI-Mobile-Gentrit-Hyseni-PF/PersonalFinance/node_modules/expo-audio/tsconfig.json",
+    "owner": "typescript",
+    "severity": 8,
+    "message": "File 'expo-module-scripts/tsconfig.base' not found.",
+    "source": "ts",
+    "startLineNumber": 3,
+    "startColumn": 14,
+    "endLineNumber": 3,
+    "endColumn": 49,
+    "origin": "extHost1"
+    }].
+    Po ashtu,eshte nje problem ,qe psh mos lejo me shkru shuma me minus kur regjistroj shpenzim ose te ardhura,veq sa e bera dhe mu lejua.
+    Edhe po ashtu,psh kur e regjistrova nje shpenzim 100 euro tek qellimi - telefon i ri,u rrit shuma atje prej 121 ne 221,por kur e ndryshova ose kur e bera update ate transaksion,shuma tek telefoni i ri nuk ndryshoi,ende mbeti 221.00/1000.00
+54.kur behen llogarit,te behen llogarite menjehere,pra psh e shkruaj 10 - 2.5 , te behet 7.5 ,e jo ta ruaj une transaksionin,e tani me e pa shumen
+55.Tek qellimi ,kur e shkruan Shuma e Synuar,dalin vetem numrat,presja,pika.Shtoj edhe llogaritjet ,pra plus,minus.Kete logjike perdore edhe tek shtimi i shpenzimeve,ku kur e preku Shuma,del e gjithe tastiera ne telefon,me shkronja me krejt,e ti lejoj vetem ate logjiken lart,pra logjiken e duhur per kalkulator,etj.
+56.Mire eshte,ky asistenti psh se kuptoj ja shkruva qit prompt
+Pina kafe 4 euro e 65 cent,por fitova 5 euro ne nje bast me nje shoke.
+Ky e llogariti si shpenzim 4.65,por kete 5 euro nuk e shikoj fare ,e injoroj,ku logjikissht duhej te ishte pershkrimi dhe e ardhur 5-4.65= 0.35
+57.
+58.
+59.
+60.

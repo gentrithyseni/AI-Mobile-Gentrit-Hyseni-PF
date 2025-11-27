@@ -62,7 +62,7 @@ export default function ChatAddScreen({ navigation }) {
       } else {
         setMessages(prev => [...prev, { id: Date.now()+1, text: "Më fal, nuk e kuptova mirë. Provo të shkruash më qartë.", sender: 'ai' }]);
       }
-    } catch (e) {
+    } catch (_e) {
       setMessages(prev => [...prev, { id: Date.now()+1, text: "Pata një problem me lidhjen. Provo përsëri.", sender: 'ai' }]);
     } finally {
       setLoading(false);

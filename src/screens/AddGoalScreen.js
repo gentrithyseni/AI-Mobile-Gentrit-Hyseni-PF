@@ -5,6 +5,7 @@ import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, Te
 import { createGoal, deleteGoal, updateGoal } from '../api/goals';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { evaluateExpression } from '../utils/financeCalculations';
 
 export default function AddGoalScreen({ navigation, route }) {
   const { user } = useAuth();
@@ -32,15 +33,23 @@ export default function AddGoalScreen({ navigation, route }) {
       setValue('current_amount', String(goalToEdit.current_amount));
       setSelectedIcon(goalToEdit.icon || '🎯');
     }
-  }, [goalToEdit]);
+  }, [goalToEdit, isEditing, setValue]);
 
   const onSubmit = async (values) => {
     try {
+      const targetAmount = parseFloat(evaluateExpression(values.target_amount));
+      const currentAmount = parseFloat(evaluateExpression(values.current_amount || '0'));
+
+      if (isNaN(targetAmount) || targetAmount < 0) {
+        alert('Shuma e synuar nuk është valide!');
+        return;
+      }
+
       const goalData = {
         user_id: user?.id,
         title: values.title,
-        target_amount: parseFloat(values.target_amount),
-        current_amount: parseFloat(values.current_amount || 0),
+        target_amount: targetAmount,
+        current_amount: currentAmount,
         icon: selectedIcon,
         color: '#3B82F6' // Default color for now
       };
@@ -71,7 +80,7 @@ export default function AddGoalScreen({ navigation, route }) {
             try {
               await deleteGoal(goalToEdit.id);
               navigation.goBack();
-            } catch (e) {
+            } catch (_e) {
               alert("Gabim gjatë fshirjes");
             }
           }
@@ -117,14 +126,32 @@ export default function AddGoalScreen({ navigation, route }) {
                 control={control}
                 name="target_amount"
                 render={({ field: { onChange, value } }) => (
-                <TextInput 
-                    keyboardType="numeric" 
-                    style={[styles.inputLarge, { color: colors.text, borderColor: colors.border }]} 
-                    placeholder="0.00" 
-                    placeholderTextColor={colors.textSecondary}
-                    value={value} 
-                    onChangeText={onChange} 
-                />
+                <View>
+                  <TextInput 
+                      keyboardType="numbers-and-punctuation" 
+                      style={[styles.inputLarge, { color: colors.text, borderColor: colors.border }]} 
+                      placeholder="0.00" 
+                      placeholderTextColor={colors.textSecondary}
+                      value={value} 
+                      onChangeText={(text) => {
+                        // Allow only numbers, math operators, dot, and comma
+                        const filtered = text.replace(/[^0-9+\-*/.,]/g, '');
+                        onChange(filtered);
+                      }}
+                      onBlur={() => {
+                        const calculated = evaluateExpression(value);
+                        if (parseFloat(calculated) < 0) {
+                            Alert.alert("Gabim", "Shuma nuk mund të jetë negative");
+                            onChange("");
+                        } else if (calculated !== value) {
+                            onChange(calculated);
+                        }
+                      }}
+                  />
+                  <Text style={{color: colors.textSecondary, fontSize: 12, marginTop: -15, marginBottom: 15}}>
+                    Mund të shkruani llogaritje (psh. 1000+500)
+                  </Text>
+                </View>
                 )}
             />
 
@@ -134,12 +161,25 @@ export default function AddGoalScreen({ navigation, route }) {
                 name="current_amount"
                 render={({ field: { onChange, value } }) => (
                 <TextInput 
-                    keyboardType="numeric" 
+                    keyboardType="numbers-and-punctuation" 
                     style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]} 
                     placeholder="0.00" 
                     placeholderTextColor={colors.textSecondary}
                     value={value} 
-                    onChangeText={onChange} 
+                    onChangeText={(text) => {
+                        // Allow only numbers, math operators, dot, and comma
+                        const filtered = text.replace(/[^0-9+\-*/.,]/g, '');
+                        onChange(filtered);
+                    }}
+                    onBlur={() => {
+                        const calculated = evaluateExpression(value);
+                        if (parseFloat(calculated) < 0) {
+                            Alert.alert("Gabim", "Shuma nuk mund të jetë negative");
+                            onChange("");
+                        } else if (calculated !== value) {
+                            onChange(calculated);
+                        }
+                    }}
                 />
                 )}
             />

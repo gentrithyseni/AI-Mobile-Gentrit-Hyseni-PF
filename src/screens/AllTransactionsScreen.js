@@ -2,9 +2,10 @@ import { ArrowLeft, Search, X } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { getTransactions } from '../api/transactions';
-import { CATEGORY_ICONS } from '../constants/categories';
+import { CATEGORY_ICONS, DEFAULT_INCOME_CATEGORIES } from '../constants/categories';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { formatCurrency } from '../utils/financeCalculations';
 
 export default function AllTransactionsScreen({ navigation }) {
   const { user } = useAuth();
@@ -50,7 +51,7 @@ export default function AllTransactionsScreen({ navigation }) {
   }, [transactions]);
 
   const renderItem = ({ item }) => {
-    const isIncome = ['Income', 'Paga', 'Te Ardhura', 'Dhurata'].includes(item.category) || item.type === 'income';
+    const isIncome = DEFAULT_INCOME_CATEGORIES.includes(item.category) || item.type === 'income';
     const IconComponent = CATEGORY_ICONS[item.category]?.icon || CATEGORY_ICONS['Tjetër'].icon;
     const iconColor = CATEGORY_ICONS[item.category]?.color || CATEGORY_ICONS['Tjetër'].color;
 
@@ -70,7 +71,7 @@ export default function AllTransactionsScreen({ navigation }) {
             </View>
         </View>
         <Text style={[styles.amount, {color: isIncome ? '#059669' : '#DC2626'}]}>
-            {isIncome ? '+' : '-'} €{Number(item.amount).toFixed(2)}
+            {isIncome ? '+' : '-'} {formatCurrency(item.amount)}
         </Text>
       </TouchableOpacity>
     );

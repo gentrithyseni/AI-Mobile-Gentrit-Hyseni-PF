@@ -1,11 +1,12 @@
 import { ArrowLeft, Plus } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { createBudget, deleteBudget, getBudgets, updateBudget } from '../api/budgets';
 import { getTransactions } from '../api/transactions';
 import { CATEGORY_ICONS, DEFAULT_EXPENSE_CATEGORIES } from '../constants/categories';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { formatCurrency } from '../utils/financeCalculations';
 
 export default function BudgetScreen({ navigation }) {
   const { user } = useAuth();
@@ -20,11 +21,7 @@ export default function BudgetScreen({ navigation }) {
   const [amountLimit, setAmountLimit] = useState('');
   const [editingId, setEditingId] = useState(null);
 
-  useEffect(() => {
-    loadData();
-  }, [user]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     try {
@@ -39,7 +36,11 @@ export default function BudgetScreen({ navigation }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const getSpentAmount = (category) => {
     const now = new Date();
@@ -146,7 +147,7 @@ export default function BudgetScreen({ navigation }) {
                                 <Text style={{fontSize: 16, fontWeight: 'bold', color: colors.text}}>{b.category}</Text>
                             </View>
                             <Text style={{fontSize: 16, fontWeight: 'bold', color: isOver ? '#EF4444' : colors.text}}>
-                                {spent.toFixed(0)} / {limit.toFixed(0)} €
+                                {formatCurrency(spent)} / {formatCurrency(limit)} €
                             </Text>
                         </View>
                         

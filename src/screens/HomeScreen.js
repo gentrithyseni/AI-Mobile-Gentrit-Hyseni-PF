@@ -1,23 +1,24 @@
 import { BrainCircuit, LogOut, Moon, PiggyBank, PlusCircle, Sparkles, Sun, Target, TrendingDown, TrendingUp, Wallet } from 'lucide-react-native';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Svg, { G, Path } from 'react-native-svg';
 import { getGoals } from '../api/goals';
 import { getFinancialAdvice } from '../api/groq';
 import { getTransactions } from '../api/transactions';
-import { CATEGORY_ICONS } from '../constants/categories';
+import { CATEGORY_ICONS, DEFAULT_INCOME_CATEGORIES } from '../constants/categories';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { formatCurrency } from '../utils/financeCalculations';
 
 const SimplePieChart = ({ data, strokeColor = 'white' }) => {
   const total = data.reduce((acc, item) => acc + item.y, 0);
-  if (total === 0) return <Text style={{textAlign:'center', color:'#999', margin: 20}}>S'ka të dhëna për grafikun</Text>;
+  if (total === 0) return <Text style={{textAlign:'center', color:'#999', margin: 20}}>S&apos;ka të dhëna për grafikun</Text>;
 
   let startAngle = 0;
   return (
     <View style={{ alignItems: 'center', marginVertical: 20 }}>
-      <Svg width={150} height={150} viewBox="0 0 100 100">
-        <G rotation="-90" origin="50, 50">
+      <Svg width={180} height={180} viewBox="0 0 100 100">
+        <G transform="rotate(-90, 50, 50)">
           {data.map((slice, index) => {
             const sliceAngle = (slice.y / total) * 360;
             const x1 = 50 + 50 * Math.cos(Math.PI * startAngle / 180);
@@ -27,7 +28,7 @@ const SimplePieChart = ({ data, strokeColor = 'white' }) => {
             const largeArc = sliceAngle > 180 ? 1 : 0;
             const pathData = `M 50 50 L ${x1} ${y1} A 50 50 0 ${largeArc} 1 ${x2} ${y2} Z`;
             startAngle += sliceAngle;
-            return <Path key={index} d={pathData} fill={slice.color} stroke={strokeColor} strokeWidth="2" />;
+            return <Path key={index} d={pathData} fill={slice.color} stroke={strokeColor} strokeWidth="2" strokeLinejoin="round" />;
           })}
         </G>
       </Svg>
@@ -35,7 +36,7 @@ const SimplePieChart = ({ data, strokeColor = 'white' }) => {
         {data.map((item, i) => (
            <View key={i} style={{ flexDirection: 'row', alignItems: 'center', marginRight: 10 }}>
              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: item.color, marginRight: 5 }} />
-             <Text style={{ fontSize: 10, color: '#555' }}>{item.x}</Text>
+             <Text style={{ fontSize: 10, color: strokeColor === 'white' ? '#555' : '#ccc' }}>{item.x}</Text>
            </View>
         ))}
       </View>
@@ -59,7 +60,7 @@ export default function HomeScreen({ navigation }) {
     }
   };
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!user) return;
     try {
       setRefreshing(true);
@@ -72,8 +73,8 @@ export default function HomeScreen({ navigation }) {
       setGoals(fetchedGoals || []);
       
       if (tx && tx.length > 0) {
-        const totalIncome = tx.filter(t => ['Paga', 'Income', 'Te Ardhura'].includes(t.category)).reduce((sum, t) => sum + Number(t.amount), 0);
-        const totalExpense = tx.filter(t => !['Paga', 'Income', 'Te Ardhura'].includes(t.category)).reduce((sum, t) => sum + Number(t.amount), 0);
+        const totalIncome = tx.filter(t => DEFAULT_INCOME_CATEGORIES.includes(t.category)).reduce((sum, t) => sum + Number(t.amount), 0);
+        const totalExpense = tx.filter(t => !DEFAULT_INCOME_CATEGORIES.includes(t.category)).reduce((sum, t) => sum + Number(t.amount), 0);
         const balance = totalIncome - totalExpense;
         
         setAiAdvice(prev => ({ ...prev, loading: true }));
@@ -88,22 +89,22 @@ export default function HomeScreen({ navigation }) {
     } finally {
       setRefreshing(false);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
     loadData();
     const unsubscribe = navigation.addListener('focus', loadData);
     return unsubscribe;
-  }, [navigation, user]);
+  }, [navigation, loadData]);
 
   const totals = useMemo(() => {
-    const inc = transactions.filter(t => ['Income', 'Paga', 'Te Ardhura'].includes(t.category)).reduce((acc, t) => acc + Number(t.amount), 0);
-    const exp = transactions.filter(t => !['Income', 'Paga', 'Te Ardhura'].includes(t.category)).reduce((acc, t) => acc + Number(t.amount), 0);
+    const inc = transactions.filter(t => DEFAULT_INCOME_CATEGORIES.includes(t.category)).reduce((acc, t) => acc + Number(t.amount), 0);
+    const exp = transactions.filter(t => !DEFAULT_INCOME_CATEGORIES.includes(t.category)).reduce((acc, t) => acc + Number(t.amount), 0);
     return { income: inc, expense: exp, balance: inc - exp };
   }, [transactions]);
 
   const chartData = useMemo(() => {
-    const expenses = transactions.filter(t => !['Income', 'Paga', 'Te Ardhura'].includes(t.category));
+    const expenses = transactions.filter(t => !DEFAULT_INCOME_CATEGORIES.includes(t.category));
     const byCat = expenses.reduce((acc, t) => {
       acc[t.category] = (acc[t.category] || 0) + Number(t.amount);
       return acc;
@@ -132,7 +133,7 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.headerTop}>
            <Wallet size={80} color="rgba(255,255,255,0.1)" style={{position:'absolute', right: 0, top: -10}} />
            <Text style={styles.balanceLabel}>Bilanci Aktual</Text>
-           <Text style={styles.balanceValue}>{currency} {totals.balance.toFixed(2)}</Text>
+           <Text style={styles.balanceValue}>{currency} {formatCurrency(totals.balance)}</Text>
         </View>
         <View style={styles.statsRow}>
            <View style={styles.statBox}>
@@ -141,7 +142,7 @@ export default function HomeScreen({ navigation }) {
               </View>
               <View>
                  <Text style={styles.statLabel}>Të Ardhura</Text>
-                 <Text style={styles.statValue}>{currency} {totals.income.toFixed(2)}</Text>
+                 <Text style={styles.statValue}>{currency} {formatCurrency(totals.income)}</Text>
               </View>
            </View>
            <View style={styles.statBox}>
@@ -150,7 +151,7 @@ export default function HomeScreen({ navigation }) {
               </View>
               <View>
                  <Text style={styles.statLabel}>Shpenzime</Text>
-                 <Text style={styles.statValue}>{currency} {totals.expense.toFixed(2)}</Text>
+                 <Text style={styles.statValue}>{currency} {formatCurrency(totals.expense)}</Text>
               </View>
            </View>
         </View>
@@ -198,7 +199,7 @@ export default function HomeScreen({ navigation }) {
                              <Text style={{fontSize:15, fontWeight:'bold', backgroundColor: isDarkMode ? '#374151' : '#F3F4F6', color: colors.text, padding:3, borderRadius:5}}>{pct}%</Text>
                           </View>
                           <Text style={[styles.goalTitle, { color: colors.text }]}>{g.title}</Text>
-                          <Text style={styles.goalSub}>€{g.current_amount} / €{g.target_amount}</Text>
+                          <Text style={styles.goalSub}>€{formatCurrency(g.current_amount)} / €{formatCurrency(g.target_amount)}</Text>
                           <View style={{height:4, backgroundColor: isDarkMode ? '#374151' : '#E5E7EB', borderRadius:2, marginTop:5}}>
                              <View style={{width:`${pct}%`, backgroundColor: g.color || colors.primary, height:4, borderRadius:2}} />
                           </View>
@@ -221,8 +222,7 @@ export default function HomeScreen({ navigation }) {
                 flexDirection: 'row', 
                 alignItems: 'center', 
                 justifyContent: 'space-between',
-                shadowColor: '#000',
-                shadowOpacity: 0.05,
+                boxShadow: '0px 2px 4px rgba(0,0,0,0.05)',
                 elevation: 2
               }}
             >
@@ -282,8 +282,8 @@ export default function HomeScreen({ navigation }) {
                       <Text style={styles.txDate}>{new Date(item.date).toLocaleDateString()} {new Date(item.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</Text>
                    </View>
                 </View>
-                <Text style={{fontWeight:'bold', color: ['Income','Paga','Te Ardhura'].includes(item.category) ? '#059669' : '#DC2626'}}>
-                   {['Income','Paga','Te Ardhura'].includes(item.category) ? '+' : '-'} €{item.amount}
+                <Text style={{fontWeight:'bold', color: DEFAULT_INCOME_CATEGORIES.includes(item.category) ? '#059669' : '#DC2626'}}>
+                   {DEFAULT_INCOME_CATEGORIES.includes(item.category) ? '+' : '-'} €{formatCurrency(item.amount)}
                 </Text>
              </TouchableOpacity>
              );
@@ -295,7 +295,7 @@ export default function HomeScreen({ navigation }) {
       <View style={styles.fabContainer}>
         {/* AI Chat Button */}
         <TouchableOpacity 
-          style={[styles.fab, {backgroundColor: '#7C3AED', marginBottom: 15}]} 
+          style={[styles.fab, {backgroundColor: '#7C3AED', marginBottom: 15, opacity: 0.85}]} 
           onPress={() => navigation.navigate('ChatAdd')}
         >
            <Sparkles size={24} color="white" />
@@ -303,7 +303,7 @@ export default function HomeScreen({ navigation }) {
 
         {/* Manual Add Button */}
         <TouchableOpacity 
-          style={[styles.fab, { backgroundColor: colors.primary }]} 
+          style={[styles.fab, { backgroundColor: colors.primary, opacity: 0.85 }]} 
           onPress={() => navigation.navigate('AddTransaction')}
         >
            <PlusCircle size={30} color="white" />
@@ -325,7 +325,7 @@ const styles = StyleSheet.create({
   statLabel: { color: '#BFDBFE', fontSize: 10 },
   statValue: { color: 'white', fontSize: 16, fontWeight: 'bold' },
   
-  aiCard: { margin: 20, marginTop: 10, padding: 15, borderRadius: 16, shadowColor:'#000', shadowOpacity:0.05, elevation:3, borderLeftWidth: 4, borderLeftColor: '#9333EA' },
+  aiCard: { margin: 20, marginTop: 10, padding: 15, borderRadius: 16, boxShadow: '0px 2px 4px rgba(0,0,0,0.05)', elevation:3, borderLeftWidth: 4, borderLeftColor: '#9333EA' },
   aiTitle: { fontWeight: 'bold', color: '#9333EA', fontSize: 16 },
   aiText: { color: '#4B5563', fontSize: 13, marginTop: 4, lineHeight: 18 },
 
@@ -338,7 +338,7 @@ const styles = StyleSheet.create({
   
   chartCard: { marginHorizontal: 20, borderRadius: 16, padding: 10, elevation: 2 },
 
-  txItem: { marginHorizontal: 20, marginBottom: 8, padding: 12, borderRadius: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', shadowColor:'#000', shadowOpacity:0.03, elevation: 1 },
+  txItem: { marginHorizontal: 20, marginBottom: 8, padding: 12, borderRadius: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0px 2px 4px rgba(0,0,0,0.03)', elevation: 1 },
   txIcon: { padding: 8, borderRadius: 20, marginRight: 12 },
   txCategory: { fontWeight: '600', color: '#374151', fontSize: 14 },
   txDate: { color: '#9CA3AF', fontSize: 11 },
@@ -352,8 +352,6 @@ const styles = StyleSheet.create({
     alignItems: 'center', 
     justifyContent: 'center', 
     elevation: 5, 
-    shadowColor: '#000', 
-    shadowOpacity: 0.3, 
-    shadowOffset: {width:0, height:4} 
+    boxShadow: '0px 4px 8px rgba(0,0,0,0.3)',
   }
 });

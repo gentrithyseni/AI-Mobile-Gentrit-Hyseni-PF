@@ -1,5 +1,6 @@
-import { Bell, Camera, CircleHelp, Globe, LogOut, Save } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
+import * as ImagePicker from 'expo-image-picker';
+import { Bell, Camera, CircleHelp, LogOut, Save } from 'lucide-react-native';
+import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import supabaseClient from '../config/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -13,6 +14,7 @@ export default function ProfileScreen() {
   const [uploading, setUploading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(null);
   
+  const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   
@@ -26,11 +28,7 @@ export default function ProfileScreen() {
     birthdate: '',
   });
 
-  useEffect(() => {
-    if (user) fetchProfile();
-  }, [user]);
-
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     try {
       setLoading(true);
       const { data, error } = await supabaseClient
@@ -57,7 +55,11 @@ export default function ProfileScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (user) fetchProfile();
+  }, [user, fetchProfile]);
 
   const pickImage = async () => {
     try {
@@ -71,7 +73,7 @@ export default function ProfileScreen() {
       if (!result.canceled && result.assets && result.assets.length > 0) {
         uploadImage(result.assets[0]);
       }
-    } catch (e) {
+    } catch (_e) {
       Alert.alert('Gabim', 'Nuk mund të hapet galeria.');
     }
   };
@@ -106,8 +108,7 @@ export default function ProfileScreen() {
       
       setAvatarUrl(data.publicUrl);
       Alert.alert('Sukses', 'Foto e profilit u përditësua!');
-    } catch (error) {
-      console.error(error);
+    } catch (_error) {
       Alert.alert('Gabim', 'Dështoi ngarkimi i fotos. Sigurohuni që keni krijuar bucket "avatars" në Supabase.');
     } finally {
       setUploading(false);
@@ -115,12 +116,12 @@ export default function ProfileScreen() {
   };
 
   const handlePasswordChange = async () => {
-    if (!newPassword || !confirmPassword) {
-      Alert.alert('Gabim', 'Ju lutem plotësoni fushat e fjalëkalimit.');
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      Alert.alert('Gabim', 'Ju lutem plotësoni të gjitha fushat e fjalëkalimit.');
       return;
     }
     if (newPassword !== confirmPassword) {
-      Alert.alert('Gabim', 'Fjalëkalimet nuk përputhen.');
+      Alert.alert('Gabim', 'Fjalëkalimet e reja nuk përputhen.');
       return;
     }
     if (newPassword.length < 6) {
@@ -130,9 +131,24 @@ export default function ProfileScreen() {
 
     try {
       setSaving(true);
+      
+      // Verify current password
+      const { error: signInError } = await supabaseClient.auth.signInWithPassword({
+        email: user.email,
+        password: currentPassword,
+      });
+
+      if (signInError) {
+        Alert.alert('Gabim', 'Fjalëkalimi aktual është i pasaktë.');
+        setSaving(false);
+        return;
+      }
+
       const { error } = await supabaseClient.auth.updateUser({ password: newPassword });
       if (error) throw error;
+      
       Alert.alert('Sukses', 'Fjalëkalimi u ndryshua me sukses!');
+      setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
     } catch (error) {
@@ -262,6 +278,17 @@ export default function ProfileScreen() {
         <View style={[styles.formSection, { backgroundColor: colors.card }]}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Ndrysho Fjalëkalimin</Text>
           <View style={styles.inputGroup}>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>Fjalëkalimi Aktual</Text>
+            <TextInput 
+              style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]} 
+              value={currentPassword}
+              onChangeText={setCurrentPassword}
+              placeholder="Shkruani fjalëkalimin aktual"
+              placeholderTextColor={colors.textSecondary}
+              secureTextEntry
+            />
+          </View>
+          <View style={styles.inputGroup}>
             <Text style={[styles.label, { color: colors.textSecondary }]}>Fjalëkalimi i ri</Text>
             <TextInput 
               style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]} 
@@ -304,28 +331,15 @@ export default function ProfileScreen() {
                 />
             </View>
 
-            <View style={[styles.settingRow, { borderBottomColor: colors.border, borderBottomWidth: 0 }]}>
+            <TouchableOpacity 
+                onPress={() => Alert.alert('Eksporto', 'Të dhënat tuaja do të dërgohen në emailin tuaj së shpejti.')}
+                style={[styles.settingRow, { borderBottomColor: colors.border, borderBottomWidth: 0 }]}
+            >
                 <View style={{flexDirection:'row', alignItems:'center', gap: 10}}>
-                    <Globe size={20} color={colors.text} />
-                    <Text style={{fontSize: 16, color: colors.text}}>Monedha</Text>
+                    <Save size={20} color={colors.text} />
+                    <Text style={{fontSize: 16, color: colors.text}}>Eksporto të dhënat (CSV)</Text>
                 </View>
-                <View style={{flexDirection:'row', gap: 5}}>
-                    {['€', '$', 'L'].map(c => (
-                        <TouchableOpacity 
-                            key={c} 
-                            onPress={() => setAppCurrency(c)}
-                            style={{
-                                paddingHorizontal: 10, 
-                                paddingVertical: 5, 
-                                borderRadius: 8, 
-                                backgroundColor: currency === c ? colors.primary : (colors.background)
-                            }}
-                        >
-                            <Text style={{color: currency === c ? 'white' : colors.text, fontWeight:'bold'}}>{c}</Text>
-                        </TouchableOpacity>
-                    ))}
-                </View>
-            </View>
+            </TouchableOpacity>
         </View>
 
         {/* Support Section */}
@@ -354,7 +368,7 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20 },
   headerTitle: { fontSize: 28, fontWeight: 'bold' },
-  profileCard: { borderRadius: 20, padding: 24, alignItems: 'center', marginBottom: 24, shadowColor: '#000', shadowOpacity: 0.05, elevation: 2 },
+  profileCard: { borderRadius: 20, padding: 24, alignItems: 'center', marginBottom: 24, boxShadow: '0px 2px 4px rgba(0,0,0,0.05)', elevation: 2 },
   
   avatarContainer: { position: 'relative', marginBottom: 16 },
   avatarImage: { width: 100, height: 100, borderRadius: 50 },

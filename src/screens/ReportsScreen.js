@@ -3,8 +3,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Svg, { G, Path, Rect, Text as SvgText } from 'react-native-svg';
 import { getTransactions } from '../api/transactions';
+import { DEFAULT_INCOME_CATEGORIES } from '../constants/categories';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { formatCurrency } from '../utils/financeCalculations';
 
 // --- 1. Bar Chart i Rregulluar ---
 const SimpleBarChart = ({ income, expense, textColor }) => {
@@ -17,8 +19,8 @@ const SimpleBarChart = ({ income, expense, textColor }) => {
   const incomeHeight = (income / maxVal) * barAreaHeight;
   const expenseHeight = (expense / maxVal) * barAreaHeight;
 
-  const incomeText = `€ ${income.toFixed(2)}`;
-  const expenseText = `€ ${expense.toFixed(2)}`;
+  const incomeText = `€ ${formatCurrency(income)}`;
+  const expenseText = `€ ${formatCurrency(expense)}`;
 
   return (
     <View style={{ alignItems: 'center', marginVertical: 10 }}>
@@ -92,7 +94,7 @@ const CalendarView = ({ date, transactions, onSelectDay, selectedDay, colors }) 
     return transactions
       .filter(t => {
         const d = new Date(t.date);
-        return d.getDate() === day && d.getMonth() === month && d.getFullYear() === year && !['Income', 'Paga', 'Te Ardhura'].includes(t.category);
+        return d.getDate() === day && d.getMonth() === month && d.getFullYear() === year && !DEFAULT_INCOME_CATEGORIES.includes(t.category);
       })
       .reduce((acc, t) => acc + Number(t.amount), 0);
   };
@@ -150,13 +152,13 @@ const CalendarView = ({ date, transactions, onSelectDay, selectedDay, colors }) 
 // --- 3. Pie Chart ---
 const SimplePieChart = ({ data, strokeColor = 'white' }) => {
   const total = data.reduce((acc, item) => acc + item.y, 0);
-  if (total === 0) return <Text style={{ textAlign: 'center', color: '#999', margin: 20 }}>S'ka të dhëna</Text>;
+  if (total === 0) return <Text style={{ textAlign: 'center', color: '#999', margin: 20 }}>S&apos;ka të dhëna</Text>;
 
   let startAngle = 0;
   return (
     <View style={{ alignItems: 'center', marginVertical: 10 }}>
       <Svg width={180} height={180} viewBox="0 0 100 100">
-        <G rotation="-90" origin="50, 50">
+        <G transform="rotate(-90, 50, 50)">
           {data.map((slice, index) => {
             const sliceAngle = (slice.y / total) * 360;
             const x1 = 50 + 50 * Math.cos(Math.PI * startAngle / 180);
@@ -218,7 +220,7 @@ const WeeklySpendingChart = ({ data, textColor, barColor }) => {
                   fontSize="10"
                   textAnchor="middle"
                 >
-                  {d.value.toFixed(2)}
+                  {formatCurrency(d.value)}
                 </SvgText>
               )}
             </G>
@@ -282,7 +284,7 @@ export default function ReportsScreen({ navigation }) {
   // --- Llogaritjet ---
 
   const chartData = useMemo(() => {
-    const expenses = filteredTransactions.filter(t => !['Income', 'Paga', 'Te Ardhura'].includes(t.category));
+    const expenses = filteredTransactions.filter(t => !DEFAULT_INCOME_CATEGORIES.includes(t.category));
     const byCat = expenses.reduce((acc, t) => {
       acc[t.category] = (acc[t.category] || 0) + Number(t.amount);
       return acc;
@@ -306,18 +308,18 @@ export default function ReportsScreen({ navigation }) {
   }, [filteredTransactions, selectedDay]);
 
   const totalExpense = filteredTransactions
-    .filter(t => !['Income', 'Paga', 'Te Ardhura'].includes(t.category))
+    .filter(t => !DEFAULT_INCOME_CATEGORIES.includes(t.category))
     .reduce((acc, t) => acc + Number(t.amount), 0);
 
   const totalIncome = filteredTransactions
-    .filter(t => ['Income', 'Paga', 'Te Ardhura'].includes(t.category))
+    .filter(t => DEFAULT_INCOME_CATEGORIES.includes(t.category))
     .reduce((acc, t) => acc + Number(t.amount), 0);
 
   const netBalance = totalIncome - totalExpense;
 
   const dailyAverage = useMemo(() => {
       const currentMonthExpenses = filteredTransactions.filter(t => {
-          return !['Income', 'Paga', 'Te Ardhura'].includes(t.category);
+          return !DEFAULT_INCOME_CATEGORIES.includes(t.category);
       });
       const total = currentMonthExpenses.reduce((acc, t) => acc + Number(t.amount), 0);
       
@@ -337,7 +339,7 @@ export default function ReportsScreen({ navigation }) {
   // --- New: Weekly Breakdown Data ---
   const weeklyData = useMemo(() => {
     const days = ['Di', 'Hë', 'Ma', 'Më', 'En', 'Pr', 'Sh']; // Sunday to Saturday
-    const expenses = filteredTransactions.filter(t => !['Income', 'Paga', 'Te Ardhura'].includes(t.category));
+    const expenses = filteredTransactions.filter(t => !DEFAULT_INCOME_CATEGORIES.includes(t.category));
     
     const grouped = new Array(7).fill(0);
     
@@ -366,7 +368,7 @@ export default function ReportsScreen({ navigation }) {
     });
 
     const prevExpense = prevMonthTx
-        .filter(t => !['Income', 'Paga', 'Te Ardhura'].includes(t.category))
+        .filter(t => !DEFAULT_INCOME_CATEGORIES.includes(t.category))
         .reduce((acc, t) => acc + Number(t.amount), 0);
 
     const diff = totalExpense - prevExpense;
@@ -451,7 +453,7 @@ export default function ReportsScreen({ navigation }) {
          <View>
              <Text style={{color: colors.textSecondary, fontSize: 12}}>Krahasuar me muajin e kaluar</Text>
              <Text style={{color: colors.text, fontWeight:'bold', fontSize: 16}}>
-                 {comparisonData.diff > 0 ? '+' : ''}€ {comparisonData.diff.toFixed(2)} ({comparisonData.percent.toFixed(1)}%)
+                 {comparisonData.diff > 0 ? '+' : ''}€ {formatCurrency(comparisonData.diff)} ({comparisonData.percent.toFixed(1)}%)
              </Text>
          </View>
          <View style={{flexDirection:'row', alignItems:'center', gap: 5, backgroundColor: comparisonData.diff > 0 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)', padding: 8, borderRadius: 12}}>
@@ -469,7 +471,7 @@ export default function ReportsScreen({ navigation }) {
              <ArrowUpCircle size={18} color="#10B981" />
              <Text style={[styles.summaryLabel, {color: colors.textSecondary}]}> Të Ardhura</Text>
           </View>
-          <Text style={[styles.summaryValue, { color: '#10B981' }]}>€ {totalIncome.toFixed(2)}</Text>
+          <Text style={[styles.summaryValue, { color: '#10B981' }]}>€ {formatCurrency(totalIncome)}</Text>
         </View>
 
         <View style={[styles.summaryCard, { backgroundColor: colors.card, borderColor: 'rgba(239, 68, 68, 0.3)' }]}>
@@ -477,7 +479,7 @@ export default function ReportsScreen({ navigation }) {
              <ArrowDownCircle size={18} color="#EF4444" />
              <Text style={[styles.summaryLabel, {color: colors.textSecondary}]}> Shpenzime</Text>
           </View>
-          <Text style={[styles.summaryValue, { color: '#EF4444' }]}>€ {totalExpense.toFixed(2)}</Text>
+          <Text style={[styles.summaryValue, { color: '#EF4444' }]}>€ {formatCurrency(totalExpense)}</Text>
         </View>
       </View>
 
@@ -485,14 +487,14 @@ export default function ReportsScreen({ navigation }) {
       <View style={styles.summaryRow}>
           <View style={[styles.netCard, { backgroundColor: colors.primary, flex: 1 }]}>
             <Text style={{color: 'rgba(255,255,255,0.8)', fontSize: 12}}>Bilanci Neto</Text>
-            <Text style={{color: 'white', fontSize: 22, fontWeight: 'bold'}}>€ {netBalance.toFixed(2)}</Text>
+            <Text style={{color: 'white', fontSize: 22, fontWeight: 'bold'}}>€ {formatCurrency(netBalance)}</Text>
           </View>
           <View style={[styles.netCard, { backgroundColor: colors.card, flex: 1, borderWidth:1, borderColor: colors.border }]}>
             <View style={{flexDirection:'row', alignItems:'center', gap:5}}>
                 <Calendar size={14} color={colors.textSecondary}/>
                 <Text style={{color: colors.textSecondary, fontSize: 12}}>Mesatarja Ditore</Text>
             </View>
-            <Text style={{color: colors.text, fontSize: 22, fontWeight: 'bold'}}>€ {dailyAverage.toFixed(2)}</Text>
+            <Text style={{color: colors.text, fontSize: 22, fontWeight: 'bold'}}>€ {formatCurrency(dailyAverage)}</Text>
           </View>
       </View>
 
@@ -519,13 +521,13 @@ export default function ReportsScreen({ navigation }) {
                     Transaksionet më {selectedDay} {selectedDate.toLocaleDateString('sq-AL', { month: 'long' })}
                 </Text>
                 {selectedDayTransactions.length === 0 ? (
-                    <Text style={{color: colors.textSecondary}}>S'ka transaksione në këtë datë.</Text>
+                    <Text style={{color: colors.textSecondary}}>S&apos;ka transaksione në këtë datë.</Text>
                 ) : (
                     selectedDayTransactions.map(t => (
                         <View key={t.id} style={{flexDirection:'row', justifyContent:'space-between', marginBottom: 8}}>
                             <Text style={{color: colors.text}}>{t.category}</Text>
-                            <Text style={{fontWeight:'bold', color: ['Income','Paga','Te Ardhura'].includes(t.category) ? '#10B981' : '#EF4444'}}>
-                                {['Income','Paga','Te Ardhura'].includes(t.category) ? '+' : '-'}€{t.amount}
+                            <Text style={{fontWeight:'bold', color: DEFAULT_INCOME_CATEGORIES.includes(t.category) ? '#10B981' : '#EF4444'}}>
+                                {DEFAULT_INCOME_CATEGORIES.includes(t.category) ? '+' : '-'}€{formatCurrency(t.amount)}
                             </Text>
                         </View>
                     ))
@@ -560,7 +562,7 @@ export default function ReportsScreen({ navigation }) {
                             <Text style={{ fontSize: 14, color: colors.text, fontWeight: '500' }}>{item.x}</Text>
                         </View>
                         <View style={{ alignItems: 'flex-end' }}>
-                            <Text style={{ fontSize: 14, fontWeight: 'bold', color: colors.text }}>€ {item.y.toFixed(2)}</Text>
+                            <Text style={{ fontSize: 14, fontWeight: 'bold', color: colors.text }}>€ {formatCurrency(item.y)}</Text>
                             <Text style={{ fontSize: 12, color: colors.textSecondary }}>{Math.round((item.y / totalExpense) * 100)}%</Text>
                         </View>
                     </View>
@@ -582,9 +584,9 @@ const styles = StyleSheet.create({
   summaryLabel: { fontSize: 12, fontWeight: '600' },
   summaryValue: { fontSize: 18, fontWeight: 'bold', marginTop: 5 },
 
-  netCard: { padding: 15, borderRadius: 16, shadowOpacity: 0.1, elevation: 2, justifyContent:'center' },
+  netCard: { padding: 15, borderRadius: 16, boxShadow: '0px 2px 4px rgba(0,0,0,0.1)', elevation: 2, justifyContent:'center' },
 
-  card: { borderRadius: 16, padding: 20, marginBottom: 20, shadowColor: '#000', shadowOpacity: 0.05, elevation: 2 },
+  card: { borderRadius: 16, padding: 20, marginBottom: 20, boxShadow: '0px 2px 4px rgba(0,0,0,0.05)', elevation: 2 },
   cardTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 15 },
   
   catRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1 },

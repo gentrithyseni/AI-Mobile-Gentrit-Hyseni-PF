@@ -42,30 +42,26 @@ export const ThemeProvider = ({ children }) => {
   const systemScheme = useColorScheme();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [currency, setCurrency] = useState('€'); // Default currency symbol
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadTheme();
-  }, []);
-
-  const loadTheme = async () => {
-    try {
-      const storedTheme = await AsyncStorage.getItem('theme');
-      if (storedTheme) {
-        setIsDarkMode(storedTheme === 'dark');
-      } else {
-        setIsDarkMode(systemScheme === 'dark');
+    const loadTheme = async () => {
+      try {
+        const storedTheme = await AsyncStorage.getItem('theme');
+        if (storedTheme) {
+          setIsDarkMode(storedTheme === 'dark');
+        } else {
+          setIsDarkMode(systemScheme === 'dark');
+        }
+        
+        const storedCurrency = await AsyncStorage.getItem('currency');
+        if (storedCurrency) setCurrency(storedCurrency);
+        
+      } catch (e) {
+        console.error('Failed to load theme', e);
       }
-      
-      const storedCurrency = await AsyncStorage.getItem('currency');
-      if (storedCurrency) setCurrency(storedCurrency);
-      
-    } catch (e) {
-      console.error('Failed to load theme', e);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+    loadTheme();
+  }, [systemScheme]);
 
   const toggleTheme = async () => {
     const newMode = !isDarkMode;

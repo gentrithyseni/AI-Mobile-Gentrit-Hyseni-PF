@@ -8,6 +8,7 @@ import { createTransaction, deleteTransaction, updateTransaction } from '../api/
 import { CATEGORY_ICONS, DEFAULT_EXPENSE_CATEGORIES, DEFAULT_INCOME_CATEGORIES } from '../constants/categories';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { evaluateExpression } from '../utils/financeCalculations';
 
 export default function AddTransactionScreen({ navigation, route }) {
   const { user } = useAuth();
@@ -53,7 +54,7 @@ export default function AddTransactionScreen({ navigation, route }) {
         setType('expense');
       }
     }
-  }, [transactionToEdit]);
+  }, [transactionToEdit, isEditing, setValue]);
 
   const activeCats = useMemo(() => {
     const defaults = type === 'expense' ? DEFAULT_EXPENSE_CATEGORIES : DEFAULT_INCOME_CATEGORIES;
@@ -115,9 +116,24 @@ export default function AddTransactionScreen({ navigation, route }) {
     }
 
     try {
+      // Evaluate math expression in amount (e.g. "10-3.5")
+      // Note: Calculation is also done onBlur, but we double check here
+      const calculatedAmount = evaluateExpression(values.amount);
+      const finalAmount = parseFloat(calculatedAmount);
+
+      if (isNaN(finalAmount)) {
+        alert('Shuma nuk është valide!');
+        return;
+      }
+
+      if (finalAmount < 0) {
+        alert('Shuma nuk mund të jetë negative!');
+        return;
+      }
+
       const txData = {
         user_id: user?.id,
-        amount: parseFloat(values.amount),
+        amount: finalAmount,
         type: type,
         category: type === 'income' ? (values.category === 'Ushqim' ? 'Income' : values.category) : values.category,
         description: values.notes || 'Pa përshkrim',
@@ -126,6 +142,38 @@ export default function AddTransactionScreen({ navigation, route }) {
 
       if (isEditing) {
         await updateTransaction(transactionToEdit.id, txData);
+        
+        // Handle Goal Update on Edit
+        // Note: Since we don't track which goal was originally selected in the transaction table,
+        // we can only update the goal if the user selects one NOW.
+        // Ideally, we should store goal_id in transactions table to reverse the old amount.
+        // For now, we will just add the difference if the user selects a goal.
+        if (selectedGoalId) {
+             const goal = goals.find(g => g.id === selectedGoalId);
+             if (goal) {
+                 // If we assume the user is correcting the SAME transaction for the SAME goal:
+                 // New Goal Amount = Old Goal Amount - Old Transaction Amount + New Transaction Amount
+                 // But we don't know if it was linked to this goal before.
+                 // So we will just add the new amount to the goal, assuming it wasn't tracked before or user wants to add it now.
+                 // To do this properly, we need a schema change to add goal_id to transactions.
+                 
+                 // Current workaround: Just add the amount to the goal as if it's new contribution
+                 // This is what the user asked for: "kur e ndryshova... shuma nuk ndryshoi"
+                 // So we will update it now.
+                 
+                 // However, if we just add it, we might double count if we don't subtract the old one.
+                 // Since we can't subtract the old one (don't know which goal), we will just add the difference 
+                 // between new amount and old amount IF the user explicitly selects the goal again.
+                 
+                 const difference = finalAmount - Number(transactionToEdit.amount);
+                 // Only update if there is a difference and it makes sense
+                 if (difference !== 0) {
+                    const newGoalAmount = Number(goal.current_amount) + difference;
+                    await updateGoal(selectedGoalId, { current_amount: newGoalAmount });
+                 }
+             }
+        }
+
       } else {
         await createTransaction(txData);
         
@@ -133,7 +181,7 @@ export default function AddTransactionScreen({ navigation, route }) {
         if (selectedGoalId) {
             const goal = goals.find(g => g.id === selectedGoalId);
             if (goal) {
-                const newAmount = Number(goal.current_amount) + parseFloat(values.amount);
+                const newAmount = Number(goal.current_amount) + finalAmount;
                 await updateGoal(selectedGoalId, { current_amount: newAmount });
             }
         }
@@ -173,7 +221,7 @@ export default function AddTransactionScreen({ navigation, route }) {
             try {
               await deleteTransaction(transactionToEdit.id);
               navigation.goBack();
-            } catch (e) {
+            } catch (_e) {
               alert("Gabim gjatë fshirjes");
             }
           }
@@ -215,14 +263,32 @@ export default function AddTransactionScreen({ navigation, route }) {
                 control={control}
                 name="amount"
                 render={({ field: { onChange, value } }) => (
-                <TextInput 
-                    keyboardType="numeric" 
-                    style={[styles.inputLarge, { color: colors.text, borderColor: colors.border }]} 
-                    placeholder="0.00" 
-                    placeholderTextColor={colors.textSecondary}
-                    value={value} 
-                    onChangeText={onChange} 
-                />
+                <View>
+                  <TextInput 
+                      keyboardType="numbers-and-punctuation" 
+                      style={[styles.inputLarge, { color: colors.text, borderColor: colors.border }]} 
+                      placeholder="0.00 ose llogarit (10+5)" 
+                      placeholderTextColor={colors.textSecondary}
+                      value={value} 
+                      onChangeText={(text) => {
+                        // Allow only numbers, math operators, dot, and comma
+                        const filtered = text.replace(/[^0-9+\-*/.,]/g, '');
+                        onChange(filtered);
+                      }}
+                      onBlur={() => {
+                        const calculated = evaluateExpression(value);
+                        if (parseFloat(calculated) < 0) {
+                            Alert.alert("Gabim", "Shuma nuk mund të jetë negative");
+                            onChange("");
+                        } else if (calculated !== value) {
+                            onChange(calculated);
+                        }
+                      }}
+                  />
+                  <Text style={{color: colors.textSecondary, fontSize: 12, marginTop: 4}}>
+                    Mund të shkruani llogaritje (psh. 50+20-5)
+                  </Text>
+                </View>
                 )}
             />
 
@@ -270,7 +336,14 @@ export default function AddTransactionScreen({ navigation, route }) {
             {/* Goals Selection Section - Only for Expenses */}
             {type === 'expense' && goals.length > 0 && (
                 <View style={{marginBottom: 20}}>
-                    <Text style={[styles.label, { color: colors.textSecondary }]}>Lidhe me një Qëllim</Text>
+                    <Text style={[styles.label, { color: colors.textSecondary }]}>
+                        {isEditing ? 'Përditëso Qëllimin (Opsionale)' : 'Lidhe me një Qëllim'}
+                    </Text>
+                    {isEditing && (
+                        <Text style={{color: colors.textSecondary, fontSize: 12, marginBottom: 5}}>
+                            * Zgjidhni përsëri qëllimin për të përditësuar progresin
+                        </Text>
+                    )}
                     <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                         <TouchableOpacity 
                             onPress={() => {

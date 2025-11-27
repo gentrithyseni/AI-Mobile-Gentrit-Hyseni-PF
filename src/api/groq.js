@@ -29,13 +29,13 @@ export async function getFinancialAdvice(income, expense, balance, recentTransac
       
       Struktura e përgjigjes (Ndiqe fiks këtë strukturë):
       1. Jep një këshillë serioze dhe konkrete financiare (max 1 fjali). Përdor emoji.
-      2. Menjëherë pas saj (në rresht të ri), bëj një koment "thumbues" (roast) për shpenzimet e mia.Nje ose dy emoji ne fund(Max 1 fjali)
+      2. Menjëherë pas saj (në rresht të ri), bëj një koment "thumbues" (roast) për shpenzimet e mia.Mos u kurse ne thumbime.Nje ose dy emoji ne fund(Max 1 fjali)
       
       RREGULLAT E ARTË (STRIKTE):
       - MOS shkruaj fjalë si "Ofendim:", "Humor:", "Shaka:", "Roast:" në fillim të fjalisë.
       - Filloje shakanë direkt.
       - Përdor gjuhën SHQIP.
-      - Bëhu pak i vrazhdë me humor ("mean comedian").
+      - Bëhu pak i vrazhdë,i ashpër me humor ("little mean comedian").
     `;
 
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -61,7 +61,7 @@ export async function getFinancialAdvice(income, expense, balance, recentTransac
     
     return content;
 
-  } catch (error) {
+  } catch (_error) {
     return getFallbackAdvice();
   }
 }
@@ -115,6 +115,13 @@ export async function parseUserIntent(userText, existingGoals = []) {
         "type": "expense" (ose "income"),
         "notes": "Përshkrimi i shkurtër"
       }
+
+      4. KOMBINIM / LLOGARITJE NETO (E RËNDËSISHME)
+      Nëse përdoruesi përmend dy ose më shumë shuma (psh. "shpenzova 4.65 por fitova 5"):
+      - Llogarit shumën NETO (Të hyra - Shpenzime).
+      - Nëse del pozitive (+): type="income", category="Te Ardhura" (ose burimi kryesor), amount=Neto.
+      - Nëse del negative (-): type="expense", category="Tjetër" (ose shpenzimi kryesor), amount=Neto (pozitive).
+      - Tek "notes" shpjego llogaritjen (psh. "Fitova 5 - Kafe 4.65").
       
       RREGULL: Kthe VETËM objektin JSON, pa asnjë tekst tjetër.
     `;

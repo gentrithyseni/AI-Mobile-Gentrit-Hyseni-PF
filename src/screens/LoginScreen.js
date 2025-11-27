@@ -167,7 +167,7 @@ export default function LoginScreen({ navigation }) {
           )}
 
           <TouchableOpacity
-            style={[styles.button, { backgroundColor: colors.primary, shadowColor: colors.primary }]}
+            style={[styles.button, { backgroundColor: colors.primary, boxShadow: `0px 4px 8px ${colors.primary}4D` }]}
             onPress={handleSubmit(isSignUp ? onSignUpSubmit : onSignInSubmit)}
             disabled={isLoading}
           >
@@ -206,10 +206,7 @@ const styles = StyleSheet.create({
     marginTop: -50,
     borderRadius: 20,
     padding: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
+    boxShadow: '0px 4px 10px rgba(0,0,0,0.1)',
     elevation: 5,
     marginBottom: 30,
   },
@@ -228,9 +225,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     marginTop: 8,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    boxShadow: '0px 4px 8px rgba(0,0,0,0.3)',
     elevation: 4,
   },
   buttonText: { color: 'white', fontSize: 16, fontWeight: '600' },
