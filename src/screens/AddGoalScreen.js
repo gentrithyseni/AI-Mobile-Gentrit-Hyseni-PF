@@ -1,8 +1,9 @@
 import { ArrowLeft, Save, Trash2 } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { createGoal, deleteGoal, updateGoal } from '../api/goals';
+import CalculatorKeypad from '../components/CalculatorKeypad';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { evaluateExpression } from '../utils/financeCalculations';
@@ -10,6 +11,7 @@ import { evaluateExpression } from '../utils/financeCalculations';
 export default function AddGoalScreen({ navigation, route }) {
   const { user } = useAuth();
   const { colors, isDarkMode } = useTheme();
+  const [activeField, setActiveField] = useState(null); // 'target' or 'current' or null
   
   const goalToEdit = route.params?.goal;
   const isEditing = !!goalToEdit;
@@ -128,27 +130,18 @@ export default function AddGoalScreen({ navigation, route }) {
                 render={({ field: { onChange, value } }) => (
                 <View>
                   <TextInput 
-                      keyboardType="numbers-and-punctuation" 
+                      showSoftInputOnFocus={false}
+                      onFocus={() => {
+                          Keyboard.dismiss();
+                          setActiveField('target');
+                      }}
                       style={[styles.inputLarge, { color: colors.text, borderColor: colors.border }]} 
                       placeholder="0.00" 
                       placeholderTextColor={colors.textSecondary}
                       value={value} 
-                      onChangeText={(text) => {
-                        // Allow only numbers, math operators, dot, and comma
-                        const filtered = text.replace(/[^0-9+\-*/.,]/g, '');
-                        onChange(filtered);
-                      }}
-                      onBlur={() => {
-                        const calculated = evaluateExpression(value);
-                        if (parseFloat(calculated) < 0) {
-                            Alert.alert("Gabim", "Shuma nuk mund të jetë negative");
-                            onChange("");
-                        } else if (calculated !== value) {
-                            onChange(calculated);
-                        }
-                      }}
+                      editable={true}
                   />
-                  <Text style={{color: colors.textSecondary, fontSize: 12, marginTop: -15, marginBottom: 15}}>
+                  <Text style={{color: colors.textSecondary, fontSize: 12, marginTop: -5, marginBottom: 15}}>
                     Mund të shkruani llogaritje (psh. 1000+500)
                   </Text>
                 </View>
@@ -160,27 +153,20 @@ export default function AddGoalScreen({ navigation, route }) {
                 control={control}
                 name="current_amount"
                 render={({ field: { onChange, value } }) => (
+                <View>
                 <TextInput 
-                    keyboardType="numbers-and-punctuation" 
+                    showSoftInputOnFocus={false}
+                    onFocus={() => {
+                        Keyboard.dismiss();
+                        setActiveField('current');
+                    }}
                     style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]} 
                     placeholder="0.00" 
                     placeholderTextColor={colors.textSecondary}
                     value={value} 
-                    onChangeText={(text) => {
-                        // Allow only numbers, math operators, dot, and comma
-                        const filtered = text.replace(/[^0-9+\-*/.,]/g, '');
-                        onChange(filtered);
-                    }}
-                    onBlur={() => {
-                        const calculated = evaluateExpression(value);
-                        if (parseFloat(calculated) < 0) {
-                            Alert.alert("Gabim", "Shuma nuk mund të jetë negative");
-                            onChange("");
-                        } else if (calculated !== value) {
-                            onChange(calculated);
-                        }
-                    }}
+                    editable={true}
                 />
+                </View>
                 )}
             />
 
@@ -206,6 +192,36 @@ export default function AddGoalScreen({ navigation, route }) {
                 <Text style={styles.saveBtnText}>{isEditing ? 'Përditëso' : 'Ruaj Synimin'}</Text>
             </TouchableOpacity>
         </ScrollView>
+
+        {/* Custom Calculator Keypad */}
+        {activeField && (
+            <CalculatorKeypad 
+                onKeyPress={(key) => {
+                    const fieldName = activeField === 'target' ? 'target_amount' : 'current_amount';
+                    const currentVal = control._formValues[fieldName] || '';
+                    setValue(fieldName, currentVal + key);
+                }}
+                onDelete={() => {
+                    const fieldName = activeField === 'target' ? 'target_amount' : 'current_amount';
+                    const currentVal = control._formValues[fieldName] || '';
+                    setValue(fieldName, currentVal.slice(0, -1));
+                }}
+                onSubmit={() => {
+                    // Calculate on Done
+                    const fieldName = activeField === 'target' ? 'target_amount' : 'current_amount';
+                    const currentVal = control._formValues[fieldName] || '';
+                    const calculated = evaluateExpression(currentVal);
+                    
+                    if (parseFloat(calculated) < 0) {
+                        Alert.alert("Gabim", "Shuma nuk mund të jetë negative");
+                        setValue(fieldName, "");
+                    } else if (calculated !== currentVal) {
+                        setValue(fieldName, calculated);
+                    }
+                    setActiveField(null);
+                }}
+            />
+        )}
       </View>
     </KeyboardAvoidingView>
   );

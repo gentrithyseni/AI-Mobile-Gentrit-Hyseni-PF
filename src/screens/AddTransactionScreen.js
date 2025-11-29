@@ -1,10 +1,12 @@
-import { ArrowLeft, Plus, Save, Trash2 } from 'lucide-react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { ArrowLeft, Calendar, Clock, Plus, Save, Trash2 } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { Alert, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Keyboard, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { createCategory, deleteCategory, getCategories } from '../api/categories';
 import { getGoals, updateGoal } from '../api/goals';
 import { createTransaction, deleteTransaction, updateTransaction } from '../api/transactions';
+import CalculatorKeypad from '../components/CalculatorKeypad';
 import { CATEGORY_ICONS, DEFAULT_EXPENSE_CATEGORIES, DEFAULT_INCOME_CATEGORIES } from '../constants/categories';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -13,10 +15,15 @@ import { evaluateExpression } from '../utils/financeCalculations';
 export default function AddTransactionScreen({ navigation, route }) {
   const { user } = useAuth();
   const { colors, isDarkMode } = useTheme();
+  const [showKeypad, setShowKeypad] = useState(false);
   
   // Marrim transaksionin nëse po vijmë për editim
   const transactionToEdit = route.params?.transaction;
   const isEditing = !!transactionToEdit;
+
+  const [date, setDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [mode, setMode] = useState('date');
 
   const [customCategories, setCustomCategories] = useState([]);
   const [goals, setGoals] = useState([]);
@@ -47,14 +54,26 @@ export default function AddTransactionScreen({ navigation, route }) {
       setValue('amount', String(transactionToEdit.amount));
       setValue('category', transactionToEdit.category);
       setValue('notes', transactionToEdit.description || '');
-      // Përcaktojmë tipin bazuar në kategori ose fushën type
+
       if (DEFAULT_INCOME_CATEGORIES.includes(transactionToEdit.category) || transactionToEdit.type === 'income') {
         setType('income');
       } else {
         setType('expense');
       }
+      setDate(new Date(transactionToEdit.date));
     }
   }, [transactionToEdit, isEditing, setValue]);
+
+  const onChangeDate = (event, selectedDate) => {
+    const currentDate = selectedDate || date;
+    setShowDatePicker(Platform.OS === 'ios');
+    setDate(currentDate);
+  };
+
+  const showMode = (currentMode) => {
+    setShowDatePicker(true);
+    setMode(currentMode);
+  };
 
   const activeCats = useMemo(() => {
     const defaults = type === 'expense' ? DEFAULT_EXPENSE_CATEGORIES : DEFAULT_INCOME_CATEGORIES;
@@ -137,7 +156,7 @@ export default function AddTransactionScreen({ navigation, route }) {
         type: type,
         category: type === 'income' ? (values.category === 'Ushqim' ? 'Income' : values.category) : values.category,
         description: values.notes || 'Pa përshkrim',
-        date: isEditing ? transactionToEdit.date : new Date().toISOString(),
+        date: date.toISOString(),
       };
 
       if (isEditing) {
@@ -265,26 +284,19 @@ export default function AddTransactionScreen({ navigation, route }) {
                 render={({ field: { onChange, value } }) => (
                 <View>
                   <TextInput 
-                      keyboardType="numbers-and-punctuation" 
+                      showSoftInputOnFocus={false}
+                      onFocus={() => {
+                          Keyboard.dismiss();
+                          setShowKeypad(true);
+                      }}
                       style={[styles.inputLarge, { color: colors.text, borderColor: colors.border }]} 
-                      placeholder="0.00 ose llogarit (10+5)" 
+                      placeholder="0.00" 
                       placeholderTextColor={colors.textSecondary}
                       value={value} 
-                      onChangeText={(text) => {
-                        // Allow only numbers, math operators, dot, and comma
-                        const filtered = text.replace(/[^0-9+\-*/.,]/g, '');
-                        onChange(filtered);
-                      }}
-                      onBlur={() => {
-                        const calculated = evaluateExpression(value);
-                        if (parseFloat(calculated) < 0) {
-                            Alert.alert("Gabim", "Shuma nuk mund të jetë negative");
-                            onChange("");
-                        } else if (calculated !== value) {
-                            onChange(calculated);
-                        }
-                      }}
+                      // Disable manual typing since we use custom keypad
+                      editable={true}
                   />
+                  
                   <Text style={{color: colors.textSecondary, fontSize: 12, marginTop: 4}}>
                     Mund të shkruani llogaritje (psh. 50+20-5)
                   </Text>
@@ -307,7 +319,13 @@ export default function AddTransactionScreen({ navigation, route }) {
                         return (
                         <TouchableOpacity 
                             key={cat} 
-                            onPress={() => onChange(cat)}
+                            onPress={() => {
+                                if (isSelected) {
+                                    onChange('');
+                                } else {
+                                    onChange(cat);
+                                }
+                            }}
                             onLongPress={() => handleCategoryLongPress(cat)}
                             style={[
                                 styles.chip, 
@@ -381,6 +399,34 @@ export default function AddTransactionScreen({ navigation, route }) {
                 </View>
             )}
 
+            <Text style={[styles.label, { color: colors.textSecondary }]}>Data dhe Koha</Text>
+            <View style={{ flexDirection: 'row', gap: 10, marginBottom: 24 }}>
+                <TouchableOpacity 
+                    onPress={() => showMode('date')}
+                    style={{ flex: 1, flexDirection: 'row', alignItems: 'center', padding: 12, borderWidth: 1, borderColor: colors.border, borderRadius: 12, backgroundColor: colors.card }}
+                >
+                    <Calendar size={20} color={colors.textSecondary} style={{ marginRight: 8 }} />
+                    <Text style={{ color: colors.text }}>{date.toLocaleDateString()}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                    onPress={() => showMode('time')}
+                    style={{ flex: 1, flexDirection: 'row', alignItems: 'center', padding: 12, borderWidth: 1, borderColor: colors.border, borderRadius: 12, backgroundColor: colors.card }}
+                >
+                    <Clock size={20} color={colors.textSecondary} style={{ marginRight: 8 }} />
+                    <Text style={{ color: colors.text }}>{date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</Text>
+                </TouchableOpacity>
+            </View>
+
+            {showDatePicker && (
+                <DateTimePicker
+                    testID="dateTimePicker"
+                    value={date}
+                    mode={mode}
+                    is24Hour={true}
+                    onChange={onChangeDate}
+                />
+            )}
+
             <Text style={[styles.label, { color: colors.textSecondary }]}>Përshkrimi / Shënime</Text>
             <Controller
                 control={control}
@@ -425,6 +471,32 @@ export default function AddTransactionScreen({ navigation, route }) {
                 </View>
             </View>
         </Modal>
+
+        {/* Custom Calculator Keypad */}
+        {showKeypad && (
+            <CalculatorKeypad 
+                onKeyPress={(key) => {
+                    const currentVal = control._formValues.amount || '';
+                    setValue('amount', currentVal + key);
+                }}
+                onDelete={() => {
+                    const currentVal = control._formValues.amount || '';
+                    setValue('amount', currentVal.slice(0, -1));
+                }}
+                onSubmit={() => {
+                    // Calculate on Done
+                    const currentVal = control._formValues.amount || '';
+                    const calculated = evaluateExpression(currentVal);
+                    if (parseFloat(calculated) < 0) {
+                        Alert.alert("Gabim", "Shuma nuk mund të jetë negative");
+                        setValue('amount', "");
+                    } else if (calculated !== currentVal) {
+                        setValue('amount', calculated);
+                    }
+                    setShowKeypad(false);
+                }}
+            />
+        )}
       </View>
     </KeyboardAvoidingView>
   );

@@ -273,12 +273,14 @@ export default function HomeScreen({ navigation }) {
                 style={[styles.txItem, { backgroundColor: colors.card }]}
                 onPress={() => navigation.navigate('AddTransaction', { transaction: item })}
              >
-                <View style={{flexDirection:'row', alignItems:'center'}}>
+                <View style={{flexDirection:'row', alignItems:'center', flex: 1}}>
                    <View style={[styles.txIcon, {backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#F3F4F6'}]}>
                       <IconComponent size={20} color={iconColor} />
                    </View>
-                   <View>
-                      <Text style={[styles.txCategory, { color: colors.text }]}>{item.category}</Text>
+                   <View style={{flex: 1, marginRight: 10}}>
+                      <Text style={[styles.txCategory, { color: colors.text }]}>
+                          {item.description ? `${item.description} - ${item.category}` : item.category}
+                      </Text>
                       <Text style={styles.txDate}>{new Date(item.date).toLocaleDateString()} {new Date(item.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</Text>
                    </View>
                 </View>

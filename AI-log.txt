@@ -186,7 +186,34 @@ vetem duhet qe buttoni sign out te jete edhe tek faqja raporte edhe tek profili 
 56.Mire eshte,ky asistenti psh se kuptoj ja shkruva qit prompt
 Pina kafe 4 euro e 65 cent,por fitova 5 euro ne nje bast me nje shoke.
 Ky e llogariti si shpenzim 4.65,por kete 5 euro nuk e shikoj fare ,e injoroj,ku logjikissht duhej te ishte pershkrimi dhe e ardhur 5-4.65= 0.35
-57.
-58.
-59.
-60.
+57.a mundesh me bo qe psh me i shtu poshte tek 0,ne telefon dmth jane 4 kolona me nga 3 elemente ,pra 123
+456
+789
+/0/
+ne vend te / / te vendosesh + dhe -
+pastaj per * dhe pjesetim / te mbahet pika . ose presja , me shume,dhe del menyja tjeter me disa elemente tjera,cfare mendon ti.
+58.Duhet me qene edhe nje opsion Done,ose Perfundo sepse po ka bugs,tani spo len me shkru pershkrim,ose spo len me dal prej shto shpenzim,edhe masnej spo largohet hiq menyja.
+59.mire e ki.
+    Dua qe transaksionet,kur shfaqen poshte ne home screen,psh 
+    Argetim
+    29/11/2025 22:06 ( keshtu shfaqen,pershkrimi eshte Cs2) . Une dua qe kur te shfaqen transaksionet,te shfaqen ne kete menyre
+    Cs2 - Argetim
+    29/11/2025 22:06              shuma ne fund
+    pra edhe pershkrimi te shfaqet bile para kategorise siq kerkova lart,nese ndodh qe nuk ka pershkrim, te shfaqet Kategoria.
+    Po ashtu duhet qe te me lejohet te ndryshohet data dhe ora e transaksioneve,pra kur behet update transaksioni,te lejohet te behet update kur te dua une.DHE kur shtohet nje transaksion,te shfaqet data e sotit dhe koha momentale,nese nuk e ndryshoj te jete data koha aktuale,nese e ndryshoj ,te jete sipas ndryshimit tim.Psh qitash e shtoj nje transaksion,ne vend qe te jete data 29/11/2025 22:11, une psh muj me vendos cfaredo date dhe cfaredo kohe.Kur behet ndryshimi i dates, te jete si opsion data dhe koha,ku data ka kalendarin.
+60.Android Bundling failed 45569ms node_modules\expo\AppEntry.js (2805 modules)
+ERROR SyntaxError: C:\Users\Lenovo\Desktop\AAB\Viti 3 Semestri 5\Programimi për Pajisje Mobile\AI-Mobile-Gentrit-Hyseni-PF\PersonalFinance\src\screens\AddTransactionScreen.js: Missing semicolon. (141:16)
+
+139 | if (isNaN(finalAmount)) {
+140 | type: type,
+
+141 | category: type === 'income' ? (values.category === 'Ushqim' ? 'Income' : values.category) : values.category,
+| ^
+142 | description: values.notes || 'Pa përshkrim',
+143 | date: date.toISOString(),
+144 | };
+61.Shume mire,por kur te ndryshohet transaksioni,te shfaqen ato fushat qe kane qene me heret,psh cs2 - argetim shuma 5.50,kur klikohet me e ndryshu,te shfaqen keto dhe te jene te klikuara,jo psh shuma 0.00,te jtet 5.50, edhe koha te jete qysh ka qene,qitash koka mire,pe kupton logjiken besoj.Njejte
+62.Shume mire,shiko a ka ndonje problem tjeter naj bug spo di ende.Po ashtu veq edhe nje gje,kur te klikohet psh nje kategori,nese e klikoj apet psh, one click zgjedhet ajo kategori kur shtoj transaksion ose ndryshoj,kur behet double click ajo kategori fshihet,dmth nuk zgjidhet,se ska ndonje mundesi se qysh me bo remove cka selektova me heret tek kategorite.
+63.
+64.
+65.
