@@ -7,6 +7,7 @@ import { createCategory, deleteCategory, getCategories } from '../api/categories
 import { getGoals, updateGoal } from '../api/goals';
 import { createTransaction, deleteTransaction, updateTransaction } from '../api/transactions';
 import CalculatorKeypad from '../components/CalculatorKeypad';
+import { SmartInput } from '../components/SmartInput';
 import { CATEGORY_ICONS, DEFAULT_EXPENSE_CATEGORIES, DEFAULT_INCOME_CATEGORIES } from '../constants/categories';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -31,7 +32,7 @@ export default function AddTransactionScreen({ navigation, route }) {
   const [showModal, setShowModal] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
 
-  const { control, handleSubmit, setValue } = useForm({ 
+  const { control, handleSubmit, setValue, getValues } = useForm({ 
     defaultValues: { 
       amount: '', 
       category: '', 
@@ -39,6 +40,7 @@ export default function AddTransactionScreen({ navigation, route }) {
     } 
   });
   
+  const [selection, setSelection] = useState({ start: 0, end: 0 });
   const [type, setType] = useState('expense');
 
   useEffect(() => {
@@ -51,7 +53,11 @@ export default function AddTransactionScreen({ navigation, route }) {
   // Mbushim formën nëse jemi duke edituar
   useEffect(() => {
     if (isEditing) {
-      setValue('amount', String(transactionToEdit.amount));
+      const amt = String(transactionToEdit.amount);
+      setValue('amount', amt);
+      // Set cursor to end of amount
+      setSelection({ start: amt.length, end: amt.length });
+
       setValue('category', transactionToEdit.category);
       setValue('notes', transactionToEdit.description || '');
 
@@ -66,7 +72,9 @@ export default function AddTransactionScreen({ navigation, route }) {
 
   const onChangeDate = (event, selectedDate) => {
     const currentDate = selectedDate || date;
-    setShowDatePicker(Platform.OS === 'ios');
+    if (Platform.OS !== 'web') {
+        setShowDatePicker(Platform.OS === 'ios');
+    }
     setDate(currentDate);
   };
 
@@ -157,6 +165,7 @@ export default function AddTransactionScreen({ navigation, route }) {
         category: type === 'income' ? (values.category === 'Ushqim' ? 'Income' : values.category) : values.category,
         description: values.notes || 'Pa përshkrim',
         date: date.toISOString(),
+        goal_id: selectedGoalId || null,
       };
 
       if (isEditing) {
@@ -283,18 +292,20 @@ export default function AddTransactionScreen({ navigation, route }) {
                 name="amount"
                 render={({ field: { onChange, value } }) => (
                 <View>
-                  <TextInput 
-                      showSoftInputOnFocus={false}
+                  <SmartInput 
+                      value={value}
+                      onChangeText={onChange}
+                      onSelectionChange={(sel) => setSelection(sel)}
+                      selection={selection}
                       onFocus={() => {
-                          Keyboard.dismiss();
-                          setShowKeypad(true);
+                          if (Platform.OS !== 'web') {
+                              Keyboard.dismiss();
+                              setShowKeypad(true);
+                          }
                       }}
+                      isActive={showKeypad}
                       style={[styles.inputLarge, { color: colors.text, borderColor: colors.border }]} 
                       placeholder="0.00" 
-                      placeholderTextColor={colors.textSecondary}
-                      value={value} 
-                      // Disable manual typing since we use custom keypad
-                      editable={true}
                   />
                   
                   <Text style={{color: colors.textSecondary, fontSize: 12, marginTop: 4}}>
@@ -401,23 +412,77 @@ export default function AddTransactionScreen({ navigation, route }) {
 
             <Text style={[styles.label, { color: colors.textSecondary }]}>Data dhe Koha</Text>
             <View style={{ flexDirection: 'row', gap: 10, marginBottom: 24 }}>
-                <TouchableOpacity 
-                    onPress={() => showMode('date')}
-                    style={{ flex: 1, flexDirection: 'row', alignItems: 'center', padding: 12, borderWidth: 1, borderColor: colors.border, borderRadius: 12, backgroundColor: colors.card }}
-                >
-                    <Calendar size={20} color={colors.textSecondary} style={{ marginRight: 8 }} />
-                    <Text style={{ color: colors.text }}>{date.toLocaleDateString()}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                    onPress={() => showMode('time')}
-                    style={{ flex: 1, flexDirection: 'row', alignItems: 'center', padding: 12, borderWidth: 1, borderColor: colors.border, borderRadius: 12, backgroundColor: colors.card }}
-                >
-                    <Clock size={20} color={colors.textSecondary} style={{ marginRight: 8 }} />
-                    <Text style={{ color: colors.text }}>{date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</Text>
-                </TouchableOpacity>
+                {Platform.OS === 'web' ? (
+                    <>
+                    <View style={{flex: 1}}>
+                        <TextInput
+                            defaultValue={date.toISOString().split('T')[0]}
+                            onChangeText={(text) => {
+                                if (text.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                                    const [y, m, d] = text.split('-').map(Number);
+                                    const newDate = new Date(date);
+                                    newDate.setFullYear(y);
+                                    newDate.setMonth(m - 1);
+                                    newDate.setDate(d);
+                                    setDate(newDate);
+                                }
+                            }}
+                            placeholder="YYYY-MM-DD"
+                            style={{
+                                padding: 12, 
+                                borderWidth: 1, 
+                                borderColor: colors.border, 
+                                borderRadius: 12, 
+                                backgroundColor: colors.card,
+                                color: colors.text
+                            }}
+                        />
+                    </View>
+                    <View style={{flex: 1}}>
+                         <TextInput
+                            defaultValue={date.toTimeString().slice(0, 5)}
+                            onChangeText={(text) => {
+                                if (text.match(/^\d{2}:\d{2}$/)) {
+                                    const [h, m] = text.split(':').map(Number);
+                                    const newDate = new Date(date);
+                                    newDate.setHours(h);
+                                    newDate.setMinutes(m);
+                                    setDate(newDate);
+                                }
+                            }}
+                            placeholder="HH:MM"
+                            style={{
+                                padding: 12, 
+                                borderWidth: 1, 
+                                borderColor: colors.border, 
+                                borderRadius: 12, 
+                                backgroundColor: colors.card,
+                                color: colors.text
+                            }}
+                        />
+                    </View>
+                    </>
+                ) : (
+                    <>
+                    <TouchableOpacity 
+                        onPress={() => showMode('date')}
+                        style={{ flex: 1, flexDirection: 'row', alignItems: 'center', padding: 12, borderWidth: 1, borderColor: colors.border, borderRadius: 12, backgroundColor: colors.card }}
+                    >
+                        <Calendar size={20} color={colors.textSecondary} style={{ marginRight: 8 }} />
+                        <Text style={{ color: colors.text }}>{date.toLocaleDateString()}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                        onPress={() => showMode('time')}
+                        style={{ flex: 1, flexDirection: 'row', alignItems: 'center', padding: 12, borderWidth: 1, borderColor: colors.border, borderRadius: 12, backgroundColor: colors.card }}
+                    >
+                        <Clock size={20} color={colors.textSecondary} style={{ marginRight: 8 }} />
+                        <Text style={{ color: colors.text }}>{date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</Text>
+                    </TouchableOpacity>
+                    </>
+                )}
             </View>
 
-            {showDatePicker && (
+            {showDatePicker && Platform.OS !== 'web' && (
                 <DateTimePicker
                     testID="dateTimePicker"
                     value={date}
@@ -476,25 +541,65 @@ export default function AddTransactionScreen({ navigation, route }) {
         {showKeypad && (
             <CalculatorKeypad 
                 onKeyPress={(key) => {
-                    const currentVal = control._formValues.amount || '';
-                    const lastChar = currentVal.slice(-1);
+                    const currentVal = getValues('amount') || '';
+                    const start = selection.start || 0;
+                    const end = selection.end || 0;
                     const isOperator = ['+', '-', '*', '/'].includes(key);
-                    const isLastOperator = ['+', '-', '*', '/'].includes(lastChar);
+                    
+                    // Validation: Prevent operator at start
+                    if (isOperator && start === 0) return;
 
-                    if (isOperator && isLastOperator) {
-                        // Replace the last operator with the new one
-                        setValue('amount', currentVal.slice(0, -1) + key);
-                    } else {
-                        setValue('amount', currentVal + key);
+                    // Validation: Prevent consecutive operators (replace instead)
+                    if (isOperator && start > 0) {
+                        const prevChar = currentVal.slice(start - 1, start);
+                        if (['+', '-', '*', '/'].includes(prevChar)) {
+                            // Replace the previous operator
+                            const newVal = currentVal.slice(0, start - 1) + key + currentVal.slice(end);
+                            setValue('amount', newVal);
+                            // Cursor stays at same position (after the new operator)
+                            setSelection({ start: start, end: start });
+                            return;
+                        }
                     }
+
+                    // Insert at cursor position
+                    let newVal;
+                    if (start !== end) {
+                        // Replace selection
+                        newVal = currentVal.slice(0, start) + key + currentVal.slice(end);
+                    } else {
+                        // Insert at cursor
+                        newVal = currentVal.slice(0, start) + key + currentVal.slice(start);
+                    }
+                    
+                    setValue('amount', newVal);
+                    // Move cursor forward
+                    setSelection({ start: start + 1, end: start + 1 });
                 }}
                 onDelete={() => {
-                    const currentVal = control._formValues.amount || '';
-                    setValue('amount', currentVal.slice(0, -1));
+                    const currentVal = getValues('amount') || '';
+                    const start = selection.start || 0;
+                    const end = selection.end || 0;
+
+                    let newVal = currentVal;
+                    let newCursorPos = start;
+
+                    if (start !== end) {
+                        // Delete selection
+                        newVal = currentVal.slice(0, start) + currentVal.slice(end);
+                        newCursorPos = start;
+                    } else if (start > 0) {
+                        // Backspace
+                        newVal = currentVal.slice(0, start - 1) + currentVal.slice(start);
+                        newCursorPos = start - 1;
+                    }
+
+                    setValue('amount', newVal);
+                    setSelection({ start: newCursorPos, end: newCursorPos });
                 }}
                 onSubmit={() => {
                     // Calculate on Done
-                    const currentVal = control._formValues.amount || '';
+                    const currentVal = getValues('amount') || '';
                     const calculated = evaluateExpression(currentVal);
                     if (parseFloat(calculated) < 0) {
                         Alert.alert("Gabim", "Shuma nuk mund të jetë negative");

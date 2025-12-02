@@ -1,6 +1,7 @@
 import { ArrowLeft, Search, X } from 'lucide-react-native';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { getTransactions } from '../api/transactions';
 import { ResponsiveContainer } from '../components/ResponsiveContainer';
 import { CATEGORY_ICONS, DEFAULT_INCOME_CATEGORIES } from '../constants/categories';
@@ -10,41 +11,49 @@ import { formatCurrency } from '../utils/financeCalculations';
 
 // Optimizim: Nxjerrim komponentin jashtë për të shmangur rikrijimin e tij në çdo render
 // Përdorim React.memo për të parandaluar renderimet e panevojshme nëse props nuk ndryshojnë
-const TransactionItem = React.memo(({ item, onPress, colors, isDarkMode }) => {
+const TransactionItem = React.memo(({ item, onPress, colors, isDarkMode, index }) => {
     const isIncome = DEFAULT_INCOME_CATEGORIES.includes(item.category) || item.type === 'income';
     const IconComponent = CATEGORY_ICONS[item.category]?.icon || CATEGORY_ICONS['Tjetër'].icon;
     const iconColor = CATEGORY_ICONS[item.category]?.color || CATEGORY_ICONS['Tjetër'].color;
 
     return (
-      <TouchableOpacity 
-        style={[styles.txItem, { backgroundColor: colors.card }]}
-        onPress={() => onPress(item)}
-      >
-        <View style={{flexDirection:'row', alignItems:'center', flex: 1}}>
-            <View style={[styles.txIcon, {backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#F3F4F6'}]}>
-                <IconComponent size={20} color={iconColor} />
+      <Animated.View entering={FadeInDown.delay(index * 50).springify()}>
+        <TouchableOpacity 
+            style={[styles.txItem, { backgroundColor: colors.card }]}
+            onPress={() => onPress(item)}
+        >
+            <View style={{flexDirection:'row', alignItems:'center', flex: 1}}>
+                <View style={[styles.txIcon, {backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#F3F4F6'}]}>
+                    <IconComponent size={20} color={iconColor} />
+                </View>
+                <View style={{flex: 1, marginRight: 10}}>
+                    <Text style={[styles.txCategory, { color: colors.text }]}>
+                        {item.description ? `${item.description} - ${item.category}` : item.category}
+                    </Text>
+                    <Text style={styles.txDate}>{new Date(item.date).toLocaleDateString()} {new Date(item.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</Text>
+                </View>
             </View>
-            <View style={{flex: 1, marginRight: 10}}>
-                <Text style={[styles.txCategory, { color: colors.text }]}>
-                    {item.description ? `${item.description} - ${item.category}` : item.category}
-                </Text>
-                <Text style={styles.txDate}>{new Date(item.date).toLocaleDateString()} {new Date(item.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</Text>
-            </View>
-        </View>
-        <Text style={[styles.amount, {color: isIncome ? '#059669' : '#DC2626'}]}>
-            {isIncome ? '+' : '-'} {formatCurrency(item.amount)}
-        </Text>
-      </TouchableOpacity>
+            <Text style={[styles.amount, {color: isIncome ? '#059669' : '#DC2626'}]}>
+                {isIncome ? '+' : '-'} {formatCurrency(item.amount)}
+            </Text>
+        </TouchableOpacity>
+      </Animated.View>
     );
 });
 
-export default function AllTransactionsScreen({ navigation }) {
+export default function AllTransactionsScreen({ navigation, route }) {
   const { user } = useAuth();
   const { colors, isDarkMode } = useTheme();
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState(route.params?.category || null);
+
+  useEffect(() => {
+    if (route.params?.category) {
+        setSelectedCategory(route.params.category);
+    }
+  }, [route.params?.category]);
 
   useEffect(() => {
     const load = async () => {
@@ -87,9 +96,10 @@ export default function AllTransactionsScreen({ navigation }) {
   }, [navigation]);
 
   // Optimizim: Përdorim useCallback për renderItem
-  const renderItem = useCallback(({ item }) => (
+  const renderItem = useCallback(({ item, index }) => (
       <TransactionItem 
           item={item} 
+          index={index}
           onPress={handlePress} 
           colors={colors} 
           isDarkMode={isDarkMode} 

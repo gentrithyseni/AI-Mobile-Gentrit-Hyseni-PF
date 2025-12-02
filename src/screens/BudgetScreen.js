@@ -1,22 +1,25 @@
-import { ArrowLeft, Plus } from 'lucide-react-native';
-import { useCallback, useEffect, useState } from 'react';
+import { ArrowLeft, Plus, TrendingUp } from 'lucide-react-native';
+import { useState } from 'react';
 import { ActivityIndicator, Alert, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { createBudget, deleteBudget, getBudgets, updateBudget } from '../api/budgets';
-import { getTransactions } from '../api/transactions';
+import { createBudget, deleteBudget, updateBudget } from '../api/budgets';
 import { ResponsiveContainer } from '../components/ResponsiveContainer';
 import { CATEGORY_ICONS, DEFAULT_EXPENSE_CATEGORIES } from '../constants/categories';
 import { useAuth } from '../contexts/AuthContext';
 import { useFilter } from '../contexts/FilterContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { useBudgets } from '../hooks/useBudgets';
+import { useTransactions } from '../hooks/useTransactions';
 import { formatCurrency } from '../utils/financeCalculations';
 
 export default function BudgetScreen({ navigation }) {
   const { user } = useAuth();
   const { colors, isDarkMode } = useTheme();
   const { selectedDate } = useFilter();
-  const [budgets, setBudgets] = useState([]);
-  const [transactions, setTransactions] = useState([]);
-  const [loading, setLoading] = useState(true);
+  
+  // Use Custom Hooks
+  const { budgets, loading: loadingBudgets, refresh: refreshBudgets } = useBudgets(selectedDate);
+  const { transactions, loading: loadingTx, refresh: refreshTx } = useTransactions();
+  
   const [modalVisible, setModalVisible] = useState(false);
   
   // Form State
@@ -24,26 +27,8 @@ export default function BudgetScreen({ navigation }) {
   const [amountLimit, setAmountLimit] = useState('');
   const [editingId, setEditingId] = useState(null);
 
-  const loadData = useCallback(async () => {
-    if (!user) return;
-    setLoading(true);
-    try {
-      const [b, t] = await Promise.all([
-        getBudgets(user.id),
-        getTransactions(user.id)
-      ]);
-      setBudgets(b || []);
-      setTransactions(t || []);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  }, [user]);
+  const loading = loadingBudgets || loadingTx;
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
   const getSpentAmount = (category) => {
     const currentMonthTx = transactions.filter(t => {
       const d = new Date(t.date);
@@ -53,6 +38,29 @@ export default function BudgetScreen({ navigation }) {
              t.type === 'expense';
     });
     return currentMonthTx.reduce((acc, t) => acc + Number(t.amount), 0);
+  };
+
+  // Forecasting Logic
+  const getForecast = (spent, limit) => {
+    const today = new Date();
+    const isCurrentMonth = today.getMonth() === selectedDate.getMonth() && today.getFullYear() === selectedDate.getFullYear();
+    
+    if (!isCurrentMonth || spent === 0) return null;
+
+    const dayOfMonth = today.getDate();
+    const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+    
+    const dailyAvg = spent / dayOfMonth;
+    const projected = dailyAvg * daysInMonth;
+    
+    if (projected > limit) {
+        return {
+            projected,
+            daysLeft: daysInMonth - dayOfMonth,
+            overAmount: projected - limit
+        };
+    }
+    return null;
   };
 
   const handleSave = async () => {
@@ -74,12 +82,13 @@ export default function BudgetScreen({ navigation }) {
         await createBudget({
           user_id: user.id,
           category: selectedCategory,
-          amount_limit: parseFloat(amountLimit)
+          amount_limit: parseFloat(amountLimit),
+          month: selectedDate.toISOString().slice(0, 7)
         });
       }
       setModalVisible(false);
       resetForm();
-      loadData();
+      refreshBudgets();
     } catch (e) {
       Alert.alert('Gabim', e.message);
     }
@@ -90,7 +99,7 @@ export default function BudgetScreen({ navigation }) {
       { text: 'Jo', style: 'cancel' },
       { text: 'Po', style: 'destructive', onPress: async () => {
           await deleteBudget(id);
-          loadData();
+          refreshBudgets();
       }}
     ]);
   };
@@ -140,6 +149,7 @@ export default function BudgetScreen({ navigation }) {
                 const limit = Number(b.amount_limit);
                 const percent = Math.min(100, (spent / limit) * 100);
                 const isOver = spent > limit;
+                const forecast = getForecast(spent, limit);
                 const Icon = CATEGORY_ICONS[b.category]?.icon || CATEGORY_ICONS['Tjetër'].icon;
                 const color = CATEGORY_ICONS[b.category]?.color || '#9CA3AF';
 
@@ -160,7 +170,17 @@ export default function BudgetScreen({ navigation }) {
                         <View style={{height: 8, backgroundColor: isDarkMode ? '#374151' : '#E5E7EB', borderRadius: 4, overflow:'hidden'}}>
                             <View style={{width: `${percent}%`, height: '100%', backgroundColor: isOver ? '#EF4444' : color}} />
                         </View>
-                        {isOver && <Text style={{color: '#EF4444', fontSize: 12, marginTop: 5, fontWeight:'bold'}}>⚠️ Keni tejkaluar buxhetin!</Text>}
+                        
+                        {isOver ? (
+                            <Text style={{color: '#EF4444', fontSize: 12, marginTop: 5, fontWeight:'bold'}}>⚠️ Keni tejkaluar buxhetin!</Text>
+                        ) : forecast ? (
+                            <View style={{flexDirection:'row', alignItems:'center', marginTop: 8, gap: 5}}>
+                                <TrendingUp size={14} color="#F59E0B" />
+                                <Text style={{color: '#F59E0B', fontSize: 11}}>
+                                    Parashikimi: Do ta kaloni me {formatCurrency(forecast.overAmount)}€ nëse vazhdoni kështu.
+                                </Text>
+                            </View>
+                        ) : null}
                     </TouchableOpacity>
                 );
             })}

@@ -370,7 +370,17 @@ export default function ProfileScreen() {
             </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={[styles.logoutBtn, { backgroundColor: colors.card }]} onPress={signOut}>
+        <TouchableOpacity 
+            style={[styles.logoutBtn, { backgroundColor: colors.card }]} 
+            onPress={async () => {
+                try {
+                    await signOut();
+                } catch (e) {
+                    console.log("Sign out error ignored:", e);
+                    // Force navigation to login if needed, but usually signOut clears state
+                }
+            }}
+        >
           <LogOut size={20} color="#EF4444" />
           <Text style={styles.logoutText}>Dil nga llogaria</Text>
         </TouchableOpacity>

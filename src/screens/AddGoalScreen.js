@@ -4,6 +4,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { Alert, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { createGoal, deleteGoal, updateGoal } from '../api/goals';
 import CalculatorKeypad from '../components/CalculatorKeypad';
+import { SmartInput } from '../components/SmartInput';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { evaluateExpression } from '../utils/financeCalculations';
@@ -16,7 +17,7 @@ export default function AddGoalScreen({ navigation, route }) {
   const goalToEdit = route.params?.goal;
   const isEditing = !!goalToEdit;
 
-  const { control, handleSubmit, setValue } = useForm({ 
+  const { control, handleSubmit, setValue, getValues } = useForm({ 
     defaultValues: { 
       title: '', 
       target_amount: '', 
@@ -25,6 +26,7 @@ export default function AddGoalScreen({ navigation, route }) {
     } 
   });
 
+  const [selection, setSelection] = useState({ start: 0, end: 0 });
   const ICONS = ['🎯', '💻', '🏖️', '🚗', '🏠', '💍', '🎓', '🏥', '💰', '📱'];
   const [selectedIcon, setSelectedIcon] = useState('🎯');
 
@@ -129,17 +131,22 @@ export default function AddGoalScreen({ navigation, route }) {
                 name="target_amount"
                 render={({ field: { onChange, value } }) => (
                 <View>
-                  <TextInput 
-                      showSoftInputOnFocus={false}
-                      onFocus={() => {
-                          Keyboard.dismiss();
-                          setActiveField('target');
+                  <SmartInput 
+                      value={value}
+                      onChangeText={onChange}
+                      onSelectionChange={(sel) => {
+                          if (activeField === 'target') setSelection(sel);
                       }}
+                      selection={activeField === 'target' ? selection : undefined}
+                      onFocus={() => {
+                          if (Platform.OS !== 'web') {
+                              Keyboard.dismiss();
+                              setActiveField('target');
+                          }
+                      }}
+                      isActive={activeField === 'target'}
                       style={[styles.inputLarge, { color: colors.text, borderColor: colors.border }]} 
                       placeholder="0.00" 
-                      placeholderTextColor={colors.textSecondary}
-                      value={value} 
-                      editable={true}
                   />
                   <Text style={{color: colors.textSecondary, fontSize: 12, marginTop: -5, marginBottom: 15}}>
                     Mund të shkruani llogaritje (psh. 1000+500)
@@ -154,17 +161,22 @@ export default function AddGoalScreen({ navigation, route }) {
                 name="current_amount"
                 render={({ field: { onChange, value } }) => (
                 <View>
-                <TextInput 
-                    showSoftInputOnFocus={false}
-                    onFocus={() => {
-                        Keyboard.dismiss();
-                        setActiveField('current');
+                <SmartInput 
+                    value={value}
+                    onChangeText={onChange}
+                    onSelectionChange={(sel) => {
+                        if (activeField === 'current') setSelection(sel);
                     }}
+                    selection={activeField === 'current' ? selection : undefined}
+                    onFocus={() => {
+                        if (Platform.OS !== 'web') {
+                            Keyboard.dismiss();
+                            setActiveField('current');
+                        }
+                    }}
+                    isActive={activeField === 'current'}
                     style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]} 
                     placeholder="0.00" 
-                    placeholderTextColor={colors.textSecondary}
-                    value={value} 
-                    editable={true}
                 />
                 </View>
                 )}
@@ -198,27 +210,67 @@ export default function AddGoalScreen({ navigation, route }) {
             <CalculatorKeypad 
                 onKeyPress={(key) => {
                     const fieldName = activeField === 'target' ? 'target_amount' : 'current_amount';
-                    const currentVal = control._formValues[fieldName] || '';
-                    const lastChar = currentVal.slice(-1);
+                    const currentVal = getValues(fieldName) || '';
+                    const start = selection.start || 0;
+                    const end = selection.end || 0;
                     const isOperator = ['+', '-', '*', '/'].includes(key);
-                    const isLastOperator = ['+', '-', '*', '/'].includes(lastChar);
 
-                    if (isOperator && isLastOperator) {
-                        // Replace the last operator with the new one
-                        setValue(fieldName, currentVal.slice(0, -1) + key);
-                    } else {
-                        setValue(fieldName, currentVal + key);
+                    // Validation: Prevent operator at start
+                    if (isOperator && start === 0) return;
+
+                    // Validation: Prevent consecutive operators (replace instead)
+                    if (isOperator && start > 0) {
+                        const prevChar = currentVal.slice(start - 1, start);
+                        if (['+', '-', '*', '/'].includes(prevChar)) {
+                            // Replace the previous operator
+                            const newVal = currentVal.slice(0, start - 1) + key + currentVal.slice(end);
+                            setValue(fieldName, newVal);
+                            // Cursor stays at same position (after the new operator)
+                            setSelection({ start: start, end: start });
+                            return;
+                        }
                     }
+                    
+                    // Insert at cursor position
+                    let newVal;
+                    if (start !== end) {
+                        // Replace selection
+                        newVal = currentVal.slice(0, start) + key + currentVal.slice(end);
+                    } else {
+                        // Insert at cursor
+                        newVal = currentVal.slice(0, start) + key + currentVal.slice(start);
+                    }
+                    
+                    setValue(fieldName, newVal);
+                    // Move cursor forward
+                    setSelection({ start: start + 1, end: start + 1 });
                 }}
                 onDelete={() => {
                     const fieldName = activeField === 'target' ? 'target_amount' : 'current_amount';
-                    const currentVal = control._formValues[fieldName] || '';
-                    setValue(fieldName, currentVal.slice(0, -1));
+                    const currentVal = getValues(fieldName) || '';
+                    const start = selection.start || 0;
+                    const end = selection.end || 0;
+
+                    let newVal = currentVal;
+                    let newCursorPos = start;
+
+                    if (start !== end) {
+                        // Delete selection
+                        newVal = currentVal.slice(0, start) + currentVal.slice(end);
+                        newCursorPos = start;
+                    } else if (start > 0) {
+                        // Backspace
+                        newVal = currentVal.slice(0, start - 1) + currentVal.slice(start);
+                        newCursorPos = start - 1;
+                    }
+
+                    setValue(fieldName, newVal);
+                    setSelection({ start: newCursorPos, end: newCursorPos });
                 }}
                 onSubmit={() => {
                     // Calculate on Done
                     const fieldName = activeField === 'target' ? 'target_amount' : 'current_amount';
-                    const currentVal = control._formValues[fieldName] || '';
+                    const currentVal = getValues(fieldName) || '';
                     const calculated = evaluateExpression(currentVal);
                     
                     if (parseFloat(calculated) < 0) {

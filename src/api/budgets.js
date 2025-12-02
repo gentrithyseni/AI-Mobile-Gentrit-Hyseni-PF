@@ -1,10 +1,16 @@
 import supabaseClient from '../config/supabase';
 
-export const getBudgets = async (userId) => {
-  const { data, error } = await supabaseClient
+export const getBudgets = async (userId, month) => {
+  let query = supabaseClient
     .from('budgets')
     .select('*')
     .eq('user_id', userId);
+
+  if (month) {
+    query = query.eq('month', month);
+  }
+
+  const { data, error } = await query;
 
   if (error) throw error;
   return data;

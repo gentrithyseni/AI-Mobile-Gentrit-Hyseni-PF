@@ -559,7 +559,11 @@ export default function ReportsScreen({ navigation }) {
             
             <View style={{ marginTop: 10 }}>
                 {chartData.map((item, index) => (
-                    <View key={index} style={[styles.catRow, { borderBottomColor: colors.border }]}>
+                    <TouchableOpacity 
+                        key={index} 
+                        style={[styles.catRow, { borderBottomColor: colors.border }]}
+                        onPress={() => navigation.navigate('AllTransactions', { category: item.x })}
+                    >
                         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                             <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: item.color, marginRight: 10 }} />
                             <Text style={{ fontSize: 14, color: colors.text, fontWeight: '500' }}>{item.x}</Text>
@@ -568,7 +572,7 @@ export default function ReportsScreen({ navigation }) {
                             <Text style={{ fontSize: 14, fontWeight: 'bold', color: colors.text }}>€ {formatCurrency(item.y)}</Text>
                             <Text style={{ fontSize: 12, color: colors.textSecondary }}>{Math.round((item.y / totalExpense) * 100)}%</Text>
                         </View>
-                    </View>
+                    </TouchableOpacity>
                 ))}
             </View>
           </View>

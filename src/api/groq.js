@@ -1,6 +1,13 @@
-// src/api/groq.js (Groq / Llama 3.3 Powered)
+import supabaseClient from '../config/supabase';
 
 const GROQ_API_KEY = process.env.EXPO_PUBLIC_GROQ_API_KEY;
+
+// --- Cache System ---
+let adviceCache = {
+  key: '',
+  data: '',
+  timestamp: 0
+};
 
 // --- PLAN B: Nëse AI dështon ---
 function getFallbackAdvice() {
@@ -14,28 +21,89 @@ function getFallbackAdvice() {
   return tips[Math.floor(Math.random() * tips.length)];
 }
 
+export async function saveAiFeedback(userId, adviceText, rating) {
+  try {
+    await supabaseClient.from('ai_feedback').insert([{
+      user_id: userId,
+      advice_text: adviceText,
+      rating: rating
+    }]);
+  } catch (e) {
+    console.error("Failed to save feedback", e);
+  }
+}
+
+async function getFeedbackHistory(userId) {
+  try {
+    const { data } = await supabaseClient
+      .from('ai_feedback')
+      .select('advice_text, rating')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(5);
+    
+    if (!data || data.length === 0) return "";
+
+    const likes = data.filter(f => f.rating === 'like').map(f => f.advice_text).join(" | ");
+    const dislikes = data.filter(f => f.rating === 'dislike').map(f => f.advice_text).join(" | ");
+
+    let historyText = "";
+    if (likes) historyText += `\nPërdoruesit i kanë pëlqyer këto këshilla në të kaluarën (përdor stil të ngjashëm): ${likes}`;
+    if (dislikes) historyText += `\nPërdoruesit NUK i kanë pëlqyer këto këshilla (mos përdor këtë stil): ${dislikes}`;
+    
+    return historyText;
+  } catch (e) {
+    return "";
+  }
+}
+
 // --- 1. KËSHILLTARI I AVANCUAR + ROAST MASTER ---
-export async function getFinancialAdvice(income, expense, balance, recentTransactions) {
+export async function getFinancialAdvice(income, expense, balance, recentTransactions, topCategories = [], userId = null) {
   if (!GROQ_API_KEY || GROQ_API_KEY.includes("VENDOS")) return getFallbackAdvice();
 
+  // 1. Check Cache
+  const cacheKey = JSON.stringify({ 
+    income, 
+    expense, 
+    balance, 
+    topCats: topCategories.map(c => c.category), // Only care about category names for cache key
+    recentTxIds: recentTransactions.map(t => t.id) // Only care about IDs
+  });
+  
+  const now = Date.now();
+  const CACHE_DURATION = 15 * 60 * 1000; // 15 Minutes Cache
+
+  if (adviceCache.key === cacheKey && (now - adviceCache.timestamp) < CACHE_DURATION) {
+    console.log("Returning cached advice (saving API calls)");
+    return adviceCache.data;
+  }
+
   try {
+    let feedbackContext = "";
+    if (userId) {
+      feedbackContext = await getFeedbackHistory(userId);
+    }
+
     // Prompt i përmirësuar për të hequr etiketat "Ofendon:"
     const prompt = `
       Vepro si një ekspert dhe keshilltar i lartë financiar që ka edhe sens humori të zi. Analizo këto të dhëna:
       - Të hyra: €${income}
       - Shpenzime: €${expense}
       - Bilanci: €${balance}
+      - Top Kategoritë e shpenzimeve: ${topCategories.map(c => `${c.category} (${c.amount}€)`).join(', ')}
       - Transaksionet e fundit: ${JSON.stringify(recentTransactions.map(t => `${t.category}: ${t.amount}€`))}
       
+      ${feedbackContext}
+
       Struktura e përgjigjes (Ndiqe fiks këtë strukturë):
       1. Jep një këshillë serioze dhe konkrete financiare (max 1 fjali). Përdor emoji.
-      2. Menjëherë pas saj (në rresht të ri), bëj një koment "thumbues" (roast) për shpenzimet e mia.Mos u kurse ne thumbime.Nje ose dy emoji ne fund(Max 1 fjali)
+      2. Menjëherë pas saj (në rresht të ri), bëj një koment "thumbues" por me humor (roast) për shpenzimet e mia. Mos u bëj ofendues apo i vrazhdë, por përdor sarkazëm inteligjente dhe qesharake. Qëllimi është të qeshim, jo të ofendohemi. (Max 1 fjali).
       
       RREGULLAT E ARTË (STRIKTE):
       - MOS shkruaj fjalë si "Ofendim:", "Humor:", "Shaka:", "Roast:" në fillim të fjalisë.
       - Filloje shakanë direkt.
       - Përdor gjuhën SHQIP.
-      - Bëhu pak i vrazhdë,i ashpër me humor ("little mean comedian").
+      - Bëhu si një shok që bën shaka, jo si një gjykatës i ashpër.
     `;
 
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -53,12 +121,22 @@ export async function getFinancialAdvice(income, expense, balance, recentTransac
     });
 
     const data = await response.json();
-    if (data.error) return getFallbackAdvice();
+    if (data.error) {
+        console.warn("Groq API Error (Advice):", data.error.message);
+        return getFallbackAdvice();
+    }
     
     // Pastrim ekstra në rast se AI nuk bindet
     let content = data.choices?.[0]?.message?.content || getFallbackAdvice();
     content = content.replace(/^(Ofendim|Humor|Shaka|Roast):/i, "").trim();
     
+    // Update Cache
+    adviceCache = {
+        key: cacheKey,
+        data: content,
+        timestamp: Date.now()
+    };
+
     return content;
 
   } catch (_error) {
@@ -141,15 +219,21 @@ export async function parseUserIntent(userText, existingGoals = []) {
     });
 
     const data = await response.json();
+    
+    if (data.error) {
+        console.error("Groq API Error (Intent):", data.error);
+        return null;
+    }
+
     let content = data.choices?.[0]?.message?.content;
     
     // Pastrim JSON nëse ka tekst shtesë
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    const jsonMatch = content && content.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
         content = jsonMatch[0];
     }
 
-    return JSON.parse(content);
+    return content ? JSON.parse(content) : null;
 
   } catch (error) {
     console.error("Groq Error:", error);

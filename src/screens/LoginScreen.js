@@ -130,13 +130,28 @@ export default function LoginScreen({ navigation }) {
             render={({ field: { onChange, value } }) => (
               <View style={{position: 'relative', justifyContent: 'center'}}>
                 <TextInput 
-                  style={[styles.input, { backgroundColor: colors.inputBackground, borderColor: colors.border, color: colors.text, paddingRight: 50 }]} 
+                  style={[
+                    styles.input, 
+                    { backgroundColor: colors.inputBackground, borderColor: colors.border, color: colors.text, paddingRight: 50 },
+                    Platform.OS === 'web' && { outlineStyle: 'none' } // Helps with some web defaults
+                  ]} 
                   placeholder="Fjalëkalimi" 
                   value={value} 
                   onChangeText={onChange} 
                   secureTextEntry={!showPassword} 
                   placeholderTextColor={colors.textSecondary} 
                 />
+                {/* Hide default web password reveal button */}
+                {Platform.OS === 'web' && (
+                  <style>
+                    {`
+                      input::-ms-reveal,
+                      input::-ms-clear {
+                        display: none;
+                      }
+                    `}
+                  </style>
+                )}
                 <TouchableOpacity 
                   onPress={() => setShowPassword(!showPassword)}
                   style={{position: 'absolute', right: 15, top: 15}}

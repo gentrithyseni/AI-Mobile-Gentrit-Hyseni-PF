@@ -6,6 +6,7 @@ import { ActivityIndicator, Platform, View } from 'react-native';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import { FilterProvider } from './src/contexts/FilterContext';
 import { ThemeProvider, useTheme } from './src/contexts/ThemeContext';
+import { ToastProvider } from './src/contexts/ToastContext';
 
 // Import Screens
 import AddGoalScreen from './src/screens/AddGoalScreen';
@@ -42,8 +43,7 @@ function MainTabs() {
           maxWidth: Platform.OS === 'web' ? 800 : '100%',
           alignSelf: 'center',
           width: '100%',
-          left: Platform.OS === 'web' ? '50%' : 0,
-          transform: Platform.OS === 'web' ? [{ translateX: '-50%' }] : [],
+          ...(Platform.OS === 'web' ? { marginHorizontal: 'auto' } : {}),
         },
         tabBarIcon: ({ color, size }) => {
           if (route.name === 'Kreu') return <Wallet color={color} size={size} />;
@@ -96,9 +96,11 @@ export default function App() {
   return (
     <AuthProvider>
       <ThemeProvider>
-        <FilterProvider>
-          <AppNavigator />
-        </FilterProvider>
+        <ToastProvider>
+          <FilterProvider>
+            <AppNavigator />
+          </FilterProvider>
+        </ToastProvider>
       </ThemeProvider>
     </AuthProvider>
   );

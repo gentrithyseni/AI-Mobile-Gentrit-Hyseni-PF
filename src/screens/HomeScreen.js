@@ -1,15 +1,17 @@
-import { BrainCircuit, ChevronLeft, ChevronRight, LogOut, Moon, PiggyBank, PlusCircle, Sparkles, Sun, Target, TrendingDown, TrendingUp, Wallet } from 'lucide-react-native';
+import { BrainCircuit, ChevronLeft, ChevronRight, LogOut, Moon, PiggyBank, PlusCircle, Sparkles, Sun, Target, ThumbsDown, ThumbsUp, TrendingDown, TrendingUp, Wallet } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Svg, { G, Path } from 'react-native-svg';
 import { getGoals } from '../api/goals';
-import { getFinancialAdvice } from '../api/groq';
+import { getFinancialAdvice, saveAiFeedback } from '../api/groq';
 import { getTransactions } from '../api/transactions';
 import { ResponsiveContainer } from '../components/ResponsiveContainer';
+import { DashboardSkeleton } from '../components/SkeletonLoader';
 import { CATEGORY_ICONS, DEFAULT_INCOME_CATEGORIES } from '../constants/categories';
 import { useAuth } from '../contexts/AuthContext';
 import { useFilter } from '../contexts/FilterContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { useToast } from '../contexts/ToastContext';
 import { formatCurrency } from '../utils/financeCalculations';
 
 const SimplePieChart = ({ data, strokeColor = 'white' }) => {
@@ -50,23 +52,36 @@ export default function HomeScreen({ navigation }) {
   const { user, signOut } = useAuth();
   const { colors, isDarkMode, toggleTheme, currency } = useTheme();
   const { selectedDate, changeMonth } = useFilter();
+  const { showToast } = useToast();
   const [transactions, setTransactions] = useState([]);
   const [goals, setGoals] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [aiAdvice, setAiAdvice] = useState({ text: 'Duke analizuar...', loading: true });
+  const [feedbackGiven, setFeedbackGiven] = useState(null); // 'like' | 'dislike' | null
 
   const handleSignOut = async () => {
     try {
       await signOut();
+      showToast('Mirupafshim!', 'info');
     } catch (e) {
       console.error('Sign out error', e);
+      showToast('Gabim gjatë daljes', 'error');
     }
+  };
+
+  const handleAiFeedback = async (rating) => {
+    if (feedbackGiven) return;
+    setFeedbackGiven(rating);
+    await saveAiFeedback(user.id, aiAdvice.text, rating);
+    showToast(rating === 'like' ? 'Faleminderit! Do vazhdoj kështu.' : 'Në rregull, do e ndryshoj stilin.', 'success');
   };
 
   const loadData = useCallback(async () => {
     if (!user) return;
     try {
       setRefreshing(true);
+      setFeedbackGiven(null); // Reset feedback on refresh
       const [tx, fetchedGoals] = await Promise.all([
         getTransactions(user.id),
         getGoals(user.id)
@@ -80,8 +95,19 @@ export default function HomeScreen({ navigation }) {
         const totalExpense = tx.filter(t => !DEFAULT_INCOME_CATEGORIES.includes(t.category)).reduce((sum, t) => sum + Number(t.amount), 0);
         const balance = totalIncome - totalExpense;
         
+        // Calculate Top Categories for AI
+        const expenses = tx.filter(t => !DEFAULT_INCOME_CATEGORIES.includes(t.category));
+        const categoryTotals = expenses.reduce((acc, t) => {
+            acc[t.category] = (acc[t.category] || 0) + Number(t.amount);
+            return acc;
+        }, {});
+        const topCategories = Object.entries(categoryTotals)
+            .map(([category, amount]) => ({ category, amount }))
+            .sort((a, b) => b.amount - a.amount)
+            .slice(0, 3);
+
         setAiAdvice(prev => ({ ...prev, loading: true }));
-        const advice = await getFinancialAdvice(totalIncome, totalExpense, balance, tx.slice(0, 5));
+        const advice = await getFinancialAdvice(totalIncome, totalExpense, balance, tx.slice(0, 5), topCategories, user.id);
         setAiAdvice({ text: advice, loading: false });
       } else {
         setAiAdvice({ text: "Shto transaksione për të marrë këshilla!", loading: false });
@@ -89,8 +115,10 @@ export default function HomeScreen({ navigation }) {
 
     } catch (e) {
       console.error("Gabim:", e);
+      showToast('Gabim gjatë ngarkimit të të dhënave', 'error');
     } finally {
       setRefreshing(false);
+      setLoading(false);
     }
   }, [user]);
 
@@ -147,6 +175,16 @@ export default function HomeScreen({ navigation }) {
       color: colors[i % colors.length]
     }));
   }, [transactions, selectedDate]);
+
+  if (loading) {
+    return (
+        <ResponsiveContainer>
+            <View style={{padding: 20, paddingTop: 60}}>
+                <DashboardSkeleton />
+            </View>
+        </ResponsiveContainer>
+    );
+  }
 
   return (
     <ResponsiveContainer>
@@ -209,7 +247,7 @@ export default function HomeScreen({ navigation }) {
       </View>
 
       <ScrollView 
-        contentContainerStyle={{paddingBottom: 100}} 
+        contentContainerStyle={{paddingBottom: 150}} 
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={loadData} tintColor={colors.primary} />}
       >
         {/* Gemini Card */}
@@ -221,6 +259,17 @@ export default function HomeScreen({ navigation }) {
            <Text style={[styles.aiText, { color: colors.textSecondary }]}>
              {aiAdvice.loading ? 'Duke analizuar...' : aiAdvice.text}
            </Text>
+           
+           {!aiAdvice.loading && aiAdvice.text !== "Shto transaksione për të marrë këshilla!" && (
+             <View style={{flexDirection: 'row', justifyContent: 'flex-end', gap: 15, marginTop: 10}}>
+                <TouchableOpacity onPress={() => handleAiFeedback('like')} disabled={!!feedbackGiven}>
+                    <ThumbsUp size={20} color={feedbackGiven === 'like' ? colors.primary : colors.textSecondary} fill={feedbackGiven === 'like' ? colors.primary : 'none'} />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => handleAiFeedback('dislike')} disabled={!!feedbackGiven}>
+                    <ThumbsDown size={20} color={feedbackGiven === 'dislike' ? '#EF4444' : colors.textSecondary} fill={feedbackGiven === 'dislike' ? '#EF4444' : 'none'} />
+                </TouchableOpacity>
+             </View>
+           )}
         </View>
 
         <View style={styles.section}>
