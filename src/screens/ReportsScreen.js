@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Svg, { G, Path, Rect, Text as SvgText } from 'react-native-svg';
 import { getTransactions } from '../api/transactions';
+import { ResponsiveContainer } from '../components/ResponsiveContainer';
 import { DEFAULT_INCOME_CATEGORIES } from '../constants/categories';
 import { useAuth } from '../contexts/AuthContext';
 import { useFilter } from '../contexts/FilterContext';
@@ -379,10 +380,11 @@ export default function ReportsScreen({ navigation }) {
   }, [transactions, selectedDate, totalExpense]);
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 40, marginBottom: 20}}>
-          <Text style={[styles.headerTitle, { color: colors.text, marginTop: 0, marginBottom: 0 }]}>Pasqyra Financiare</Text>
-      </View>
+    <ResponsiveContainer>
+      <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 40, marginBottom: 20}}>
+            <Text style={[styles.headerTitle, { color: colors.text, marginTop: 0, marginBottom: 0 }]}>Pasqyra Financiare</Text>
+        </View>
 
       <View style={{flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 20}}>
           <View style={{flexDirection: 'row', alignItems: 'center', backgroundColor: colors.card, borderRadius: 20, padding: 5}}>
@@ -552,7 +554,7 @@ export default function ReportsScreen({ navigation }) {
         {loading ? (
           <ActivityIndicator color={colors.primary} />
         ) : (
-          <>
+          <View>
             <SimplePieChart data={chartData} strokeColor={colors.card} />
             
             <View style={{ marginTop: 10 }}>
@@ -569,10 +571,11 @@ export default function ReportsScreen({ navigation }) {
                     </View>
                 ))}
             </View>
-          </>
+          </View>
         )}
       </View>
     </ScrollView>
+    </ResponsiveContainer>
   );
 }
 

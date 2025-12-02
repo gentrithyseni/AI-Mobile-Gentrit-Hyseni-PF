@@ -2,6 +2,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Bell, Camera, CircleHelp, DollarSign, LogOut, Save } from 'lucide-react-native';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
+import { ResponsiveContainer } from '../components/ResponsiveContainer';
 import supabaseClient from '../config/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -186,6 +187,7 @@ export default function ProfileScreen() {
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{flex:1}}>
+      <ResponsiveContainer>
       <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 40, marginBottom: 20 }}>
           <Text style={[styles.headerTitle, { color: colors.text }]}>Profili</Text>
@@ -375,6 +377,7 @@ export default function ProfileScreen() {
         
         <View style={{height: 50}} />
       </ScrollView>
+      </ResponsiveContainer>
 
       {/* About Modal */}
       <Modal visible={showAboutModal} transparent animationType="fade">

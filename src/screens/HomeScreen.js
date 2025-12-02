@@ -5,6 +5,7 @@ import Svg, { G, Path } from 'react-native-svg';
 import { getGoals } from '../api/goals';
 import { getFinancialAdvice } from '../api/groq';
 import { getTransactions } from '../api/transactions';
+import { ResponsiveContainer } from '../components/ResponsiveContainer';
 import { CATEGORY_ICONS, DEFAULT_INCOME_CATEGORIES } from '../constants/categories';
 import { useAuth } from '../contexts/AuthContext';
 import { useFilter } from '../contexts/FilterContext';
@@ -148,7 +149,7 @@ export default function HomeScreen({ navigation }) {
   }, [transactions, selectedDate]);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <ResponsiveContainer>
       <View style={[styles.header, { backgroundColor: colors.primary }]}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
             {/* Dark Mode Toggle */}
@@ -361,7 +362,7 @@ export default function HomeScreen({ navigation }) {
            <PlusCircle size={30} color="white" />
         </TouchableOpacity>
       </View>
-    </View>
+    </ResponsiveContainer>
   );
 }
 

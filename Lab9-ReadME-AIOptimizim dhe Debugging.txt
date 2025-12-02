@@ -17,7 +17,7 @@ AI identifikoi që gjatë një "merge" ose editimi, një bllok kodi ishte dyfish
 **Komponenti:** `AllTransactionsScreen.js`
 
 **Problemi:**
-Lista e transaksioneve përdorte një funksion `renderItem` të definuar brenda komponentit kryesor, duke shkaktuar ri-krijim të panevojshëm të çdo rreshti gjatë çdo renderimi.
+Lista e transaksioneve përorte një funksion `renderItem` të definuar brenda komponentit kryesor, duke shkaktuar ri-krijim të panevojshëm të çdo rreshti gjatë çdo renderimi.
 
 **Prompt-i për AI:**
 "Ky është komponenti im `AllTransactionsScreen`. Dua ta optimizosh për më pak renderime dhe performancë më të mirë duke përdorur `useCallback` dhe `React.memo`."

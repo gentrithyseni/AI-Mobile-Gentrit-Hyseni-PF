@@ -226,7 +226,18 @@ ERROR SyntaxError: C:\Users\Lenovo\Desktop\AAB\Viti 3 Semestri 5\Programimi për
 66.Veq edhe qit Krahasuar me muajin e kaluar psh per Dhjetor -363.55 (-97.2%) edhe e Gjelbert shigjete poshte Me Pak
     rregulloje pak qe te jete psh jo - po krahasuar psh me muajin nentor je +363.55 euro ,pra ke shpenzime me pak, edhe perqindjen,edhe kete shigjeten qe te jete diqysh me mire,psh info Shpenzime me pak,
     pra komplet eshte diqysh si mbrapsht,si gabim,si jo mire per syrin dhe logjiken e njeriut.Rregulloje dhe me trego si e bere dhe cka bere.le te jete edhe +, ose - para numrit
-67.
+67.Ne supabase po dalin keto warnings per performance si kjo me poshte per insert tek budget.
+    Entity
+    public.budgets
+    Issue
+    Table public.budgets has a row level security policy Users can insert their own budgets that re-evaluates current_setting() or auth.<function>() for each row. This produces suboptimal query performance at scale. Resolve the issue by replacing auth.<function>() with (select auth.<function>()). See docs for more info.
+
+    Description
+    Detects if calls to current_setting() and auth.<function>() in RLS policies are being unnecessarily re-evaluated for each row
+    E njejta eshte per public.budget per update,delete,view.
+    Njejte edhe per public.goals per delete,insert,update,view.
+    Njejte per public.categories per te 4.
+    Si me i rregullu.Me shpjego dhe vazhdo
 68.
 69.
 70.

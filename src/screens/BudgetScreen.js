@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { createBudget, deleteBudget, getBudgets, updateBudget } from '../api/budgets';
 import { getTransactions } from '../api/transactions';
+import { ResponsiveContainer } from '../components/ResponsiveContainer';
 import { CATEGORY_ICONS, DEFAULT_EXPENSE_CATEGORIES } from '../constants/categories';
 import { useAuth } from '../contexts/AuthContext';
 import { useFilter } from '../contexts/FilterContext';
@@ -108,7 +109,7 @@ export default function BudgetScreen({ navigation }) {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <ResponsiveContainer>
       <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backBtn, { backgroundColor: isDarkMode ? colors.background : '#F3F4F6' }]}>
             <ArrowLeft size={24} color={colors.text} />
@@ -214,7 +215,7 @@ export default function BudgetScreen({ navigation }) {
             </View>
         </View>
       </Modal>
-    </View>
+    </ResponsiveContainer>
   );
 }
 

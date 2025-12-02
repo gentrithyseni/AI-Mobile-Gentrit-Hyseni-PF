@@ -2,6 +2,7 @@ import { ArrowLeft, Search, X } from 'lucide-react-native';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { getTransactions } from '../api/transactions';
+import { ResponsiveContainer } from '../components/ResponsiveContainer';
 import { CATEGORY_ICONS, DEFAULT_INCOME_CATEGORIES } from '../constants/categories';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -96,7 +97,7 @@ export default function AllTransactionsScreen({ navigation }) {
   ), [colors, isDarkMode, handlePress]);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <ResponsiveContainer>
       <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backBtn, { backgroundColor: isDarkMode ? colors.background : '#F3F4F6' }]}>
             <ArrowLeft size={24} color={colors.text} />
@@ -161,7 +162,7 @@ export default function AllTransactionsScreen({ navigation }) {
             ListEmptyComponent={<Text style={{textAlign:'center', color: colors.textSecondary, marginTop: 50}}>Nuk u gjet asnjë transaksion.</Text>}
         />
       )}
-    </View>
+    </ResponsiveContainer>
   );
 }
 

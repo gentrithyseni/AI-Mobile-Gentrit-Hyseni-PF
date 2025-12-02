@@ -38,6 +38,12 @@ function MainTabs() {
           marginBottom: Platform.OS === 'android' ? 25 : 0, 
           backgroundColor: colors.card,
           borderTopColor: colors.border,
+          // Web/Desktop Optimization
+          maxWidth: Platform.OS === 'web' ? 800 : '100%',
+          alignSelf: 'center',
+          width: '100%',
+          left: Platform.OS === 'web' ? '50%' : 0,
+          transform: Platform.OS === 'web' ? [{ translateX: '-50%' }] : [],
         },
         tabBarIcon: ({ color, size }) => {
           if (route.name === 'Kreu') return <Wallet color={color} size={size} />;
