@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { PieChart, User, Wallet } from 'lucide-react-native';
 import { ActivityIndicator, Platform, View } from 'react-native';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
+import { FilterProvider } from './src/contexts/FilterContext';
 import { ThemeProvider, useTheme } from './src/contexts/ThemeContext';
 
 // Import Screens
@@ -89,7 +90,9 @@ export default function App() {
   return (
     <AuthProvider>
       <ThemeProvider>
-        <AppNavigator />
+        <FilterProvider>
+          <AppNavigator />
+        </FilterProvider>
       </ThemeProvider>
     </AuthProvider>
   );

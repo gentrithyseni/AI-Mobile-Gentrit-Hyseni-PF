@@ -1,4 +1,4 @@
-import { BrainCircuit, LogOut, Moon, PiggyBank, PlusCircle, Sparkles, Sun, Target, TrendingDown, TrendingUp, Wallet } from 'lucide-react-native';
+import { BrainCircuit, ChevronLeft, ChevronRight, LogOut, Moon, PiggyBank, PlusCircle, Sparkles, Sun, Target, TrendingDown, TrendingUp, Wallet } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Svg, { G, Path } from 'react-native-svg';
@@ -7,6 +7,7 @@ import { getFinancialAdvice } from '../api/groq';
 import { getTransactions } from '../api/transactions';
 import { CATEGORY_ICONS, DEFAULT_INCOME_CATEGORIES } from '../constants/categories';
 import { useAuth } from '../contexts/AuthContext';
+import { useFilter } from '../contexts/FilterContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { formatCurrency } from '../utils/financeCalculations';
 
@@ -47,6 +48,7 @@ const SimplePieChart = ({ data, strokeColor = 'white' }) => {
 export default function HomeScreen({ navigation }) {
   const { user, signOut } = useAuth();
   const { colors, isDarkMode, toggleTheme, currency } = useTheme();
+  const { selectedDate, changeMonth } = useFilter();
   const [transactions, setTransactions] = useState([]);
   const [goals, setGoals] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -98,13 +100,41 @@ export default function HomeScreen({ navigation }) {
   }, [navigation, loadData]);
 
   const totals = useMemo(() => {
-    const inc = transactions.filter(t => DEFAULT_INCOME_CATEGORIES.includes(t.category)).reduce((acc, t) => acc + Number(t.amount), 0);
-    const exp = transactions.filter(t => !DEFAULT_INCOME_CATEGORIES.includes(t.category)).reduce((acc, t) => acc + Number(t.amount), 0);
-    return { income: inc, expense: exp, balance: inc - exp };
-  }, [transactions]);
+    // Total All Time
+    const totalInc = transactions.filter(t => DEFAULT_INCOME_CATEGORIES.includes(t.category)).reduce((acc, t) => acc + Number(t.amount), 0);
+    const totalExp = transactions.filter(t => !DEFAULT_INCOME_CATEGORIES.includes(t.category)).reduce((acc, t) => acc + Number(t.amount), 0);
+    
+    // Monthly Totals
+    const currentMonth = selectedDate.getMonth();
+    const currentYear = selectedDate.getFullYear();
+    const monthlyTx = transactions.filter(t => {
+        const d = new Date(t.date);
+        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    });
+
+    const monthlyInc = monthlyTx.filter(t => DEFAULT_INCOME_CATEGORIES.includes(t.category)).reduce((acc, t) => acc + Number(t.amount), 0);
+    const monthlyExp = monthlyTx.filter(t => !DEFAULT_INCOME_CATEGORIES.includes(t.category)).reduce((acc, t) => acc + Number(t.amount), 0);
+
+    return { 
+        totalIncome: totalInc, 
+        totalExpense: totalExp, 
+        totalBalance: totalInc - totalExp,
+        monthlyIncome: monthlyInc,
+        monthlyExpense: monthlyExp,
+        monthlyBalance: monthlyInc - monthlyExp
+    };
+  }, [transactions, selectedDate]);
 
   const chartData = useMemo(() => {
-    const expenses = transactions.filter(t => !DEFAULT_INCOME_CATEGORIES.includes(t.category));
+    // Filter for current month only
+    const currentMonth = selectedDate.getMonth();
+    const currentYear = selectedDate.getFullYear();
+    const monthlyTx = transactions.filter(t => {
+        const d = new Date(t.date);
+        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    });
+
+    const expenses = monthlyTx.filter(t => !DEFAULT_INCOME_CATEGORIES.includes(t.category));
     const byCat = expenses.reduce((acc, t) => {
       acc[t.category] = (acc[t.category] || 0) + Number(t.amount);
       return acc;
@@ -115,7 +145,7 @@ export default function HomeScreen({ navigation }) {
       y: byCat[key],
       color: colors[i % colors.length]
     }));
-  }, [transactions]);
+  }, [transactions, selectedDate]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -130,10 +160,22 @@ export default function HomeScreen({ navigation }) {
                 <LogOut size={20} color="white" />
             </TouchableOpacity>
         </View>
+        
+        {/* Monthly Balance (Prominent) */}
         <View style={styles.headerTop}>
            <Wallet size={80} color="rgba(255,255,255,0.1)" style={{position:'absolute', right: 0, top: -10}} />
-           <Text style={styles.balanceLabel}>Bilanci Aktual</Text>
-           <Text style={styles.balanceValue}>{currency} {formatCurrency(totals.balance)}</Text>
+           
+           <View style={{flexDirection:'row', alignItems:'center', marginBottom: 5}}>
+               <TouchableOpacity onPress={() => changeMonth(-1)} style={{padding:5}}>
+                   <ChevronLeft size={20} color="rgba(255,255,255,0.7)" />
+               </TouchableOpacity>
+               <Text style={styles.balanceLabel}>Bilanci Mujor ({selectedDate.toLocaleDateString('sq-AL', { month: 'long' }).replace(/^\w/, c => c.toUpperCase())})</Text>
+               <TouchableOpacity onPress={() => changeMonth(1)} style={{padding:5}}>
+                   <ChevronRight size={20} color="rgba(255,255,255,0.7)" />
+               </TouchableOpacity>
+           </View>
+
+           <Text style={styles.balanceValue}>{currency} {formatCurrency(totals.monthlyBalance)}</Text>
         </View>
         <View style={styles.statsRow}>
            <View style={styles.statBox}>
@@ -141,8 +183,8 @@ export default function HomeScreen({ navigation }) {
                 <TrendingUp size={18} color="#6EE7B7" />
               </View>
               <View>
-                 <Text style={styles.statLabel}>Të Ardhura</Text>
-                 <Text style={styles.statValue}>{currency} {formatCurrency(totals.income)}</Text>
+                 <Text style={styles.statLabel}>Të Ardhura (Muaji)</Text>
+                 <Text style={styles.statValue}>{currency} {formatCurrency(totals.monthlyIncome)}</Text>
               </View>
            </View>
            <View style={styles.statBox}>
@@ -150,10 +192,18 @@ export default function HomeScreen({ navigation }) {
                 <TrendingDown size={18} color="#FCA5A5" />
               </View>
               <View>
-                 <Text style={styles.statLabel}>Shpenzime</Text>
-                 <Text style={styles.statValue}>{currency} {formatCurrency(totals.expense)}</Text>
+                 <Text style={styles.statLabel}>Shpenzime (Muaji)</Text>
+                 <Text style={styles.statValue}>{currency} {formatCurrency(totals.monthlyExpense)}</Text>
               </View>
            </View>
+        </View>
+
+        {/* Total Balance (Secondary) */}
+        <View style={{marginTop: 15, paddingTop: 10, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.2)'}}>
+            <View style={{flexDirection:'row', justifyContent:'space-between', alignItems:'center'}}>
+                <Text style={{color: '#BFDBFE', fontSize: 12}}>Bilanci Total: <Text style={{color:'white', fontWeight:'bold'}}>{currency} {formatCurrency(totals.totalBalance)}</Text></Text>
+                <Text style={{color: '#BFDBFE', fontSize: 12}}>Totale: <Text style={{color:'#6EE7B7'}}>+{formatCurrency(totals.totalIncome)}</Text> | <Text style={{color:'#FCA5A5'}}>-{formatCurrency(totals.totalExpense)}</Text></Text>
+            </View>
         </View>
       </View>
 

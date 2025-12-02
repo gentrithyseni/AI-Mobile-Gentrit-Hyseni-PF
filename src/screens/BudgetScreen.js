@@ -5,12 +5,14 @@ import { createBudget, deleteBudget, getBudgets, updateBudget } from '../api/bud
 import { getTransactions } from '../api/transactions';
 import { CATEGORY_ICONS, DEFAULT_EXPENSE_CATEGORIES } from '../constants/categories';
 import { useAuth } from '../contexts/AuthContext';
+import { useFilter } from '../contexts/FilterContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { formatCurrency } from '../utils/financeCalculations';
 
 export default function BudgetScreen({ navigation }) {
   const { user } = useAuth();
   const { colors, isDarkMode } = useTheme();
+  const { selectedDate } = useFilter();
   const [budgets, setBudgets] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -41,14 +43,12 @@ export default function BudgetScreen({ navigation }) {
   useEffect(() => {
     loadData();
   }, [loadData]);
-
   const getSpentAmount = (category) => {
-    const now = new Date();
     const currentMonthTx = transactions.filter(t => {
       const d = new Date(t.date);
       return t.category === category && 
-             d.getMonth() === now.getMonth() && 
-             d.getFullYear() === now.getFullYear() &&
+             d.getMonth() === selectedDate.getMonth() && 
+             d.getFullYear() === selectedDate.getFullYear() &&
              t.type === 'expense';
     });
     return currentMonthTx.reduce((acc, t) => acc + Number(t.amount), 0);
@@ -113,7 +113,12 @@ export default function BudgetScreen({ navigation }) {
         <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backBtn, { backgroundColor: isDarkMode ? colors.background : '#F3F4F6' }]}>
             <ArrowLeft size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Buxheti Mujor</Text>
+        <View style={{alignItems:'center'}}>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>Buxheti Mujor</Text>
+            <Text style={{color: colors.textSecondary, fontSize: 12}}>
+                {selectedDate.toLocaleDateString('sq-AL', { month: 'long', year: 'numeric' }).replace(/^\w/, c => c.toUpperCase())}
+            </Text>
+        </View>
         <TouchableOpacity onPress={() => { resetForm(); setModalVisible(true); }} style={{marginLeft: 'auto', padding: 5}}>
             <Plus size={28} color={colors.primary} />
         </TouchableOpacity>

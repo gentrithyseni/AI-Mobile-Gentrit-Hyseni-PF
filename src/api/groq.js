@@ -21,7 +21,7 @@ export async function getFinancialAdvice(income, expense, balance, recentTransac
   try {
     // Prompt i përmirësuar për të hequr etiketat "Ofendon:"
     const prompt = `
-      Vepro si një ekspert i lartë finance që ka edhe sens humori të zi. Analizo këto të dhëna:
+      Vepro si një ekspert dhe keshilltar i lartë financiar që ka edhe sens humori të zi. Analizo këto të dhëna:
       - Të hyra: €${income}
       - Shpenzime: €${expense}
       - Bilanci: €${balance}

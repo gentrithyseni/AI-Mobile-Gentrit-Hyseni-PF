@@ -1,11 +1,41 @@
 import { ArrowLeft, Search, X } from 'lucide-react-native';
-import { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { getTransactions } from '../api/transactions';
 import { CATEGORY_ICONS, DEFAULT_INCOME_CATEGORIES } from '../constants/categories';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { formatCurrency } from '../utils/financeCalculations';
+
+// Optimizim: Nxjerrim komponentin jashtë për të shmangur rikrijimin e tij në çdo render
+// Përdorim React.memo për të parandaluar renderimet e panevojshme nëse props nuk ndryshojnë
+const TransactionItem = React.memo(({ item, onPress, colors, isDarkMode }) => {
+    const isIncome = DEFAULT_INCOME_CATEGORIES.includes(item.category) || item.type === 'income';
+    const IconComponent = CATEGORY_ICONS[item.category]?.icon || CATEGORY_ICONS['Tjetër'].icon;
+    const iconColor = CATEGORY_ICONS[item.category]?.color || CATEGORY_ICONS['Tjetër'].color;
+
+    return (
+      <TouchableOpacity 
+        style={[styles.txItem, { backgroundColor: colors.card }]}
+        onPress={() => onPress(item)}
+      >
+        <View style={{flexDirection:'row', alignItems:'center', flex: 1}}>
+            <View style={[styles.txIcon, {backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#F3F4F6'}]}>
+                <IconComponent size={20} color={iconColor} />
+            </View>
+            <View style={{flex: 1, marginRight: 10}}>
+                <Text style={[styles.txCategory, { color: colors.text }]}>
+                    {item.description ? `${item.description} - ${item.category}` : item.category}
+                </Text>
+                <Text style={styles.txDate}>{new Date(item.date).toLocaleDateString()} {new Date(item.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</Text>
+            </View>
+        </View>
+        <Text style={[styles.amount, {color: isIncome ? '#059669' : '#DC2626'}]}>
+            {isIncome ? '+' : '-'} {formatCurrency(item.amount)}
+        </Text>
+      </TouchableOpacity>
+    );
+});
 
 export default function AllTransactionsScreen({ navigation }) {
   const { user } = useAuth();
@@ -50,33 +80,20 @@ export default function AllTransactionsScreen({ navigation }) {
     return Array.from(cats);
   }, [transactions]);
 
-  const renderItem = ({ item }) => {
-    const isIncome = DEFAULT_INCOME_CATEGORIES.includes(item.category) || item.type === 'income';
-    const IconComponent = CATEGORY_ICONS[item.category]?.icon || CATEGORY_ICONS['Tjetër'].icon;
-    const iconColor = CATEGORY_ICONS[item.category]?.color || CATEGORY_ICONS['Tjetër'].color;
+  // Optimizim: Përdorim useCallback për funksionin e navigimit
+  const handlePress = useCallback((item) => {
+      navigation.navigate('AddTransaction', { transaction: item });
+  }, [navigation]);
 
-    return (
-      <TouchableOpacity 
-        style={[styles.txItem, { backgroundColor: colors.card }]}
-        onPress={() => navigation.navigate('AddTransaction', { transaction: item })}
-      >
-        <View style={{flexDirection:'row', alignItems:'center', flex: 1}}>
-            <View style={[styles.txIcon, {backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#F3F4F6'}]}>
-                <IconComponent size={20} color={iconColor} />
-            </View>
-            <View style={{flex: 1, marginRight: 10}}>
-                <Text style={[styles.txCategory, { color: colors.text }]}>
-                    {item.description ? `${item.description} - ${item.category}` : item.category}
-                </Text>
-                <Text style={styles.txDate}>{new Date(item.date).toLocaleDateString()} {new Date(item.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</Text>
-            </View>
-        </View>
-        <Text style={[styles.amount, {color: isIncome ? '#059669' : '#DC2626'}]}>
-            {isIncome ? '+' : '-'} {formatCurrency(item.amount)}
-        </Text>
-      </TouchableOpacity>
-    );
-  };
+  // Optimizim: Përdorim useCallback për renderItem
+  const renderItem = useCallback(({ item }) => (
+      <TransactionItem 
+          item={item} 
+          onPress={handlePress} 
+          colors={colors} 
+          isDarkMode={isDarkMode} 
+      />
+  ), [colors, isDarkMode, handlePress]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>

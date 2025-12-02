@@ -1,7 +1,7 @@
 import * as ImagePicker from 'expo-image-picker';
-import { Bell, Camera, CircleHelp, LogOut, Save } from 'lucide-react-native';
+import { Bell, Camera, CircleHelp, DollarSign, LogOut, Save } from 'lucide-react-native';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 import supabaseClient from '../config/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -20,6 +20,8 @@ export default function ProfileScreen() {
   
   // Settings State
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [showAboutModal, setShowAboutModal] = useState(false);
+  const [showCurrencyModal, setShowCurrencyModal] = useState(false);
 
   const [formData, setFormData] = useState({
     first_name: '',
@@ -317,8 +319,6 @@ export default function ProfileScreen() {
 
         {/* Settings Section */}
         <View style={[styles.formSection, { backgroundColor: colors.card }]}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Cilësimet</Text>
-            
             <View style={[styles.settingRow, { borderBottomColor: colors.border }]}>
                 <View style={{flexDirection:'row', alignItems:'center', gap: 10}}>
                     <Bell size={20} color={colors.text} />
@@ -330,6 +330,20 @@ export default function ProfileScreen() {
                     trackColor={{ false: "#767577", true: colors.primary }}
                 />
             </View>
+
+            <TouchableOpacity 
+                onPress={() => setShowCurrencyModal(true)}
+                style={[styles.settingRow, { borderBottomColor: colors.border }]}
+            >
+                <View style={{flexDirection:'row', alignItems:'center', gap: 10}}>
+                    <DollarSign size={20} color={colors.text} />
+                    <Text style={{fontSize: 16, color: colors.text}}>Monedha Kryesore</Text>
+                </View>
+                <View style={{flexDirection:'row', alignItems:'center', gap: 5}}>
+                    <Text style={{color: colors.textSecondary, fontWeight:'bold'}}>{currency}</Text>
+                    <Text style={{color: colors.textSecondary}}>{'>'}</Text>
+                </View>
+            </TouchableOpacity>
 
             <TouchableOpacity 
                 onPress={() => Alert.alert('Eksporto', 'Të dhënat tuaja do të dërgohen në emailin tuaj së shpejti.')}
@@ -346,7 +360,7 @@ export default function ProfileScreen() {
         <View style={[styles.formSection, { backgroundColor: colors.card }]}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Mbështetje</Text>
             <TouchableOpacity 
-                onPress={() => Alert.alert('Rreth Aplikacionit', 'Personal Finance AI v1.0.0\nZhvilluar nga Gentrit Hyseni')}
+                onPress={() => setShowAboutModal(true)}
                 style={{flexDirection:'row', alignItems:'center', gap: 10, paddingVertical: 10}}
             >
                 <CircleHelp size={20} color={colors.text} />
@@ -361,6 +375,76 @@ export default function ProfileScreen() {
         
         <View style={{height: 50}} />
       </ScrollView>
+
+      {/* About Modal */}
+      <Modal visible={showAboutModal} transparent animationType="fade">
+        <TouchableWithoutFeedback onPress={() => setShowAboutModal(false)}>
+            <View style={styles.modalOverlay}>
+                <TouchableWithoutFeedback>
+                    <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+                        <View style={{alignItems:'center', marginBottom: 20}}>
+                            <View style={{width: 60, height: 60, borderRadius: 15, backgroundColor: colors.primary, alignItems:'center', justifyContent:'center', marginBottom: 15}}>
+                                <Text style={{fontSize: 30}}>PF</Text>
+                            </View>
+                            <Text style={[styles.modalTitle, { color: colors.text }]}>Personal Finance AI</Text>
+                            <Text style={{ color: colors.textSecondary }}>Version 1.0.0</Text>
+                        </View>
+                        
+                        <Text style={{textAlign:'center', color: colors.text, marginBottom: 20, lineHeight: 22}}>
+                            Një aplikacion inteligjent për menaxhimin e financave personale, i fuqizuar nga AI për t'ju ndihmuar të merrni vendime më të mira financiare.
+                        </Text>
+                        
+                        <Text style={{textAlign:'center', color: colors.textSecondary, fontSize: 12, marginBottom: 20}}>
+                            Zhvilluar nga Gentrit Hyseni © 2025
+                        </Text>
+
+                        <TouchableOpacity onPress={() => setShowAboutModal(false)} style={[styles.modalBtn, { backgroundColor: colors.primary }]}>
+                            <Text style={{color:'white', fontWeight:'bold'}}>Mbyll</Text>
+                        </TouchableOpacity>
+                    </View>
+                </TouchableWithoutFeedback>
+            </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+
+      {/* Currency Modal */}
+      <Modal visible={showCurrencyModal} transparent animationType="slide">
+        <TouchableWithoutFeedback onPress={() => setShowCurrencyModal(false)}>
+            <View style={styles.modalOverlay}>
+                <TouchableWithoutFeedback>
+                    <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+                        <Text style={[styles.modalTitle, { color: colors.text, marginBottom: 20 }]}>Zgjidh Monedhën</Text>
+                        
+                        {['€', '$', 'L', '£'].map(curr => (
+                            <TouchableOpacity 
+                                key={curr}
+                                onPress={() => {
+                                    setAppCurrency(curr);
+                                    setShowCurrencyModal(false);
+                                }}
+                                style={{
+                                    padding: 15, 
+                                    borderBottomWidth: 1, 
+                                    borderBottomColor: colors.border,
+                                    flexDirection: 'row',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center'
+                                }}
+                            >
+                                <Text style={{fontSize: 18, color: colors.text}}>{curr === 'L' ? 'Lek (L)' : curr}</Text>
+                                {currency === curr && <Text style={{color: colors.primary, fontWeight:'bold'}}>✓</Text>}
+                            </TouchableOpacity>
+                        ))}
+
+                        <TouchableOpacity onPress={() => setShowCurrencyModal(false)} style={[styles.modalBtn, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, marginTop: 15 }]}>
+                            <Text style={{color: colors.text}}>Anulo</Text>
+                        </TouchableOpacity>
+                    </View>
+                </TouchableWithoutFeedback>
+            </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+
     </KeyboardAvoidingView>
   );
 }
@@ -390,5 +474,11 @@ const styles = StyleSheet.create({
   saveBtnText: { color: 'white', fontWeight: 'bold', marginLeft: 8, fontSize: 16 },
 
   logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 16, borderRadius: 16, marginBottom: 20 },
-  logoutText: { marginLeft: 8, fontSize: 16, fontWeight: 'bold', color: '#EF4444' }
+  logoutText: { marginLeft: 8, fontSize: 16, fontWeight: 'bold', color: '#EF4444' },
+
+  // Modal Styles
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 20 },
+  modalContent: { width: '100%', maxWidth: 400, borderRadius: 20, padding: 24, elevation: 5 },
+  modalTitle: { fontSize: 22, fontWeight: 'bold', textAlign: 'center' },
+  modalBtn: { padding: 15, borderRadius: 12, alignItems: 'center', marginTop: 10 }
 });

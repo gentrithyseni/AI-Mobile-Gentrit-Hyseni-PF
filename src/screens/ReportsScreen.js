@@ -5,6 +5,7 @@ import Svg, { G, Path, Rect, Text as SvgText } from 'react-native-svg';
 import { getTransactions } from '../api/transactions';
 import { DEFAULT_INCOME_CATEGORIES } from '../constants/categories';
 import { useAuth } from '../contexts/AuthContext';
+import { useFilter } from '../contexts/FilterContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { formatCurrency } from '../utils/financeCalculations';
 
@@ -90,24 +91,29 @@ const CalendarView = ({ date, transactions, onSelectDay, selectedDay, colors }) 
   const weekDays = ['Hë', 'Ma', 'Më', 'En', 'Pr', 'Sh', 'Di'];
 
   const getDayExpenses = (day) => {
-    if(!day) return 0;
-    return transactions
-      .filter(t => {
+    if(!day) return { expense: 0, income: 0 };
+    const dayTx = transactions.filter(t => {
         const d = new Date(t.date);
-        return d.getDate() === day && d.getMonth() === month && d.getFullYear() === year && !DEFAULT_INCOME_CATEGORIES.includes(t.category);
-      })
-      .reduce((acc, t) => acc + Number(t.amount), 0);
+        return d.getDate() === day && d.getMonth() === month && d.getFullYear() === year;
+    });
+
+    const expense = dayTx.filter(t => !DEFAULT_INCOME_CATEGORIES.includes(t.category)).reduce((acc, t) => acc + Number(t.amount), 0);
+    const income = dayTx.filter(t => DEFAULT_INCOME_CATEGORIES.includes(t.category)).reduce((acc, t) => acc + Number(t.amount), 0);
+    
+    return { expense, income };
   };
 
   return (
     <View>
+      <Text style={{fontSize: 16, fontWeight: 'bold', color: colors.text, marginBottom: 10, marginLeft: 5}}>Kalendari i Transaksioneve</Text>
       <View style={{flexDirection:'row', justifyContent:'space-around', marginBottom: 10}}>
         {weekDays.map(d => <Text key={d} style={{color: colors.textSecondary, width: 30, textAlign:'center', fontSize: 12}}>{d}</Text>)}
       </View>
       <View style={{flexDirection:'row', flexWrap:'wrap'}}>
         {days.map((day, i) => {
-            const expense = getDayExpenses(day);
+            const { expense, income } = getDayExpenses(day);
             const hasExpense = expense > 0;
+            const hasIncome = income > 0;
             const isSelected = selectedDay === day;
             
             return (
@@ -130,15 +136,20 @@ const CalendarView = ({ date, transactions, onSelectDay, selectedDay, colors }) 
                             borderRadius: 16, 
                             justifyContent:'center', 
                             alignItems:'center',
-                            backgroundColor: isSelected ? colors.primary : (hasExpense ? 'rgba(239, 68, 68, 0.15)' : 'transparent'),
+                            backgroundColor: isSelected ? colors.primary : 'transparent',
+                            borderWidth: (hasExpense || hasIncome) && !isSelected ? 1 : 0,
+                            borderColor: colors.border
                         }}>
                             <Text style={{
                                 color: isSelected ? 'white' : colors.text, 
-                                fontWeight: (isSelected || hasExpense) ? 'bold' : 'normal'
+                                fontWeight: (isSelected || hasExpense || hasIncome) ? 'bold' : 'normal'
                             }}>
                                 {day}
                             </Text>
-                            {hasExpense && !isSelected && <View style={{width:4, height:4, borderRadius:2, backgroundColor:'#EF4444', position:'absolute', bottom: 4}} />}
+                            <View style={{flexDirection:'row', gap: 2, position:'absolute', bottom: 4}}>
+                                {hasIncome && <View style={{width:4, height:4, borderRadius:2, backgroundColor:'#10B981'}} />}
+                                {hasExpense && <View style={{width:4, height:4, borderRadius:2, backgroundColor:'#EF4444'}} />}
+                            </View>
                         </View>
                     )}
                 </TouchableOpacity>
@@ -234,9 +245,9 @@ const WeeklySpendingChart = ({ data, textColor, barColor }) => {
 export default function ReportsScreen({ navigation }) {
   const { user } = useAuth();
   const { colors } = useTheme();
+  const { selectedDate, changeMonth: ctxChangeMonth, selectMonth: ctxSelectMonth, selectYear } = useFilter();
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState(null);
   const [showMonthPicker, setShowMonthPicker] = useState(false);
 
@@ -254,24 +265,14 @@ export default function ReportsScreen({ navigation }) {
   }, [navigation, user]);
 
   const changeMonth = (increment) => {
-    const newDate = new Date(selectedDate);
-    newDate.setMonth(newDate.getMonth() + increment);
-    setSelectedDate(newDate);
-    setSelectedDay(null); // Reset selected day when month changes
+    ctxChangeMonth(increment);
+    setSelectedDay(null);
   };
 
   const selectMonth = (monthIndex) => {
-      const newDate = new Date(selectedDate);
-      newDate.setMonth(monthIndex);
-      setSelectedDate(newDate);
-      setSelectedDay(null);
-      setShowMonthPicker(false);
-  };
-
-  const selectYear = (increment) => {
-      const newDate = new Date(selectedDate);
-      newDate.setFullYear(newDate.getFullYear() + increment);
-      setSelectedDate(newDate);
+    ctxSelectMonth(monthIndex);
+    setSelectedDay(null);
+    setShowMonthPicker(false);
   };
 
   const filteredTransactions = useMemo(() => {
@@ -453,13 +454,13 @@ export default function ReportsScreen({ navigation }) {
          <View>
              <Text style={{color: colors.textSecondary, fontSize: 12}}>Krahasuar me muajin e kaluar</Text>
              <Text style={{color: colors.text, fontWeight:'bold', fontSize: 16}}>
-                 {comparisonData.diff > 0 ? '+' : ''}€ {formatCurrency(comparisonData.diff)} ({comparisonData.percent.toFixed(1)}%)
+                 € {comparisonData.diff > 0 ? '+' : '-'}{formatCurrency(Math.abs(comparisonData.diff))} ({Math.abs(comparisonData.percent).toFixed(1)}%)
              </Text>
          </View>
          <View style={{flexDirection:'row', alignItems:'center', gap: 5, backgroundColor: comparisonData.diff > 0 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)', padding: 8, borderRadius: 12}}>
              {comparisonData.diff > 0 ? <TrendingUp size={20} color="#EF4444" /> : <TrendingDown size={20} color="#10B981" />}
              <Text style={{color: comparisonData.diff > 0 ? '#EF4444' : '#10B981', fontWeight:'bold'}}>
-                 {comparisonData.diff > 0 ? 'Më shumë' : 'Më pak'}
+                 {comparisonData.diff > 0 ? 'Më shumë shpenzime' : 'Më pak shpenzime'}
              </Text>
          </View>
       </View>

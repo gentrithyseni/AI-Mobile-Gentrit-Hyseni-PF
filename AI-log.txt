@@ -214,6 +214,24 @@ ERROR SyntaxError: C:\Users\Lenovo\Desktop\AAB\Viti 3 Semestri 5\Programimi për
 144 | };
 61.Shume mire,por kur te ndryshohet transaksioni,te shfaqen ato fushat qe kane qene me heret,psh cs2 - argetim shuma 5.50,kur klikohet me e ndryshu,te shfaqen keto dhe te jene te klikuara,jo psh shuma 0.00,te jtet 5.50, edhe koha te jete qysh ka qene,qitash koka mire,pe kupton logjiken besoj.Njejte
 62.Shume mire,shiko a ka ndonje problem tjeter naj bug spo di ende.Po ashtu veq edhe nje gje,kur te klikohet psh nje kategori,nese e klikoj apet psh, one click zgjedhet ajo kategori kur shtoj transaksion ose ndryshoj,kur behet double click ajo kategori fshihet,dmth nuk zgjidhet,se ska ndonje mundesi se qysh me bo remove cka selektova me heret tek kategorite.
-63.
-64.
-65.
+63.Kete jave ne ushtrime kemi te bejem Ai optimizim performance dhe debugging me AI.Me shpjego cka po ben,cka nevojitet me bo,etj1
+    HANDOUT – Java 9- Përdorimi i AI për Debugging & Optimizim Performance -(Expo • React Native • Supabase)
+64.tek kalkulatori, psh mundesh me e shkru 100 -+* 3, tek perfundo del 100,MOS lejo me shkru edhe - edhe + edhe * edhe /,pra nese shkruhet psh +,nese e preku masnej -,te zevendesohet pra te mbishkruhet ose ti e din ma mire.
+65.Tek home screen ,te merret tash muaji dhjetor,psh Bilanci Aktual eshte mire,edhe te ardhura dhe shpenzime,por te ndahen psh te ardhura mujore 1000, Shpenzime mujore ...
+    te ardhura totale ...., shpenzime ....
+    Kjo mujore te shfaqet me lart me shume se totalet,po ashtu edhe bilanci aktual i muajit dhe bilanci total.
+    Tash edhe te raportet,te vendosen me te gjelber tek kalendari te ndreqet me titul Kalendari i Transaksioneve - ku me te kuqe siq eshte te jene shpenzimet,me te gjelber si katror te jene te ardhurat.
+    ne home screen Shpenzimet sipas Kategorise te merren pra sipas muajit aktual.
+    tek raportet,Top Kategorite te jene siq eshte,por te lejohet mundesia te nderrohen muajt,dhe te zgjidhet edhe viti.
+66.Veq edhe qit Krahasuar me muajin e kaluar psh per Dhjetor -363.55 (-97.2%) edhe e Gjelbert shigjete poshte Me Pak
+    rregulloje pak qe te jete psh jo - po krahasuar psh me muajin nentor je +363.55 euro ,pra ke shpenzime me pak, edhe perqindjen,edhe kete shigjeten qe te jete diqysh me mire,psh info Shpenzime me pak,
+    pra komplet eshte diqysh si mbrapsht,si gabim,si jo mire per syrin dhe logjiken e njeriut.Rregulloje dhe me trego si e bere dhe cka bere.le te jete edhe +, ose - para numrit
+67.
+68.
+69.
+70.
+71.
+72.
+73.
+74.
+75.

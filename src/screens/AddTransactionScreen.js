@@ -477,7 +477,16 @@ export default function AddTransactionScreen({ navigation, route }) {
             <CalculatorKeypad 
                 onKeyPress={(key) => {
                     const currentVal = control._formValues.amount || '';
-                    setValue('amount', currentVal + key);
+                    const lastChar = currentVal.slice(-1);
+                    const isOperator = ['+', '-', '*', '/'].includes(key);
+                    const isLastOperator = ['+', '-', '*', '/'].includes(lastChar);
+
+                    if (isOperator && isLastOperator) {
+                        // Replace the last operator with the new one
+                        setValue('amount', currentVal.slice(0, -1) + key);
+                    } else {
+                        setValue('amount', currentVal + key);
+                    }
                 }}
                 onDelete={() => {
                     const currentVal = control._formValues.amount || '';

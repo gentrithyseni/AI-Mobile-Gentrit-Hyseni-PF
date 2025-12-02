@@ -199,7 +199,16 @@ export default function AddGoalScreen({ navigation, route }) {
                 onKeyPress={(key) => {
                     const fieldName = activeField === 'target' ? 'target_amount' : 'current_amount';
                     const currentVal = control._formValues[fieldName] || '';
-                    setValue(fieldName, currentVal + key);
+                    const lastChar = currentVal.slice(-1);
+                    const isOperator = ['+', '-', '*', '/'].includes(key);
+                    const isLastOperator = ['+', '-', '*', '/'].includes(lastChar);
+
+                    if (isOperator && isLastOperator) {
+                        // Replace the last operator with the new one
+                        setValue(fieldName, currentVal.slice(0, -1) + key);
+                    } else {
+                        setValue(fieldName, currentVal + key);
+                    }
                 }}
                 onDelete={() => {
                     const fieldName = activeField === 'target' ? 'target_amount' : 'current_amount';
