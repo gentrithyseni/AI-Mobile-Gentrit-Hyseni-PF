@@ -71,7 +71,7 @@ export async function getFinancialAdvice(income, expense, balance, recentTransac
   });
   
   const now = Date.now();
-  const CACHE_DURATION = 15 * 60 * 1000; // 15 Minutes Cache
+  const CACHE_DURATION = 60 * 1000; // 1 Minute Cache (Reduced from 15)
 
   if (adviceCache.key === cacheKey && (now - adviceCache.timestamp) < CACHE_DURATION) {
     console.log("Returning cached advice (saving API calls)");
@@ -84,6 +84,18 @@ export async function getFinancialAdvice(income, expense, balance, recentTransac
       feedbackContext = await getFeedbackHistory(userId);
     }
 
+    const styles = [
+        "Fokusohu tek kursimet e vogla.",
+        "Fokusohu tek investimet afatgjata.",
+        "Bëhu shumë sarkastik për shpenzimet e panevojshme.",
+        "Bëhu inkurajues dhe pozitiv.",
+        "Përdor metafora nga futbolli ose sporti.",
+        "Krahaso shpenzimet me gjëra qesharake.",
+        "Fokusohu tek balanci mujor.",
+        "Jep një këshillë filozofike për paranë."
+    ];
+    const randomStyle = styles[Math.floor(Math.random() * styles.length)];
+
     // Prompt i përmirësuar për të hequr etiketat "Ofendon:"
     const prompt = `
       Vepro si një ekspert dhe keshilltar i lartë financiar që ka edhe sens humori të zi. Analizo këto të dhëna:
@@ -94,9 +106,11 @@ export async function getFinancialAdvice(income, expense, balance, recentTransac
       - Transaksionet e fundit: ${JSON.stringify(recentTransactions.map(t => `${t.category}: ${t.amount}€`))}
       
       ${feedbackContext}
+      
+      Stili i përgjigjes sot: ${randomStyle}
 
       Struktura e përgjigjes (Ndiqe fiks këtë strukturë):
-      1. Jep një këshillë serioze dhe konkrete financiare (max 1 fjali). Përdor emoji.
+      1. Jep një këshillë serioze dhe konkrete financiare (max 1 fjali). Përdor emoji. MOS i përsërit shifrat e mia, shko direkt tek thelbi.
       2. Menjëherë pas saj (në rresht të ri), bëj një koment "thumbues" por me humor (roast) për shpenzimet e mia. Mos u bëj ofendues apo i vrazhdë, por përdor sarkazëm inteligjente dhe qesharake. Qëllimi është të qeshim, jo të ofendohemi. (Max 1 fjali).
       
       RREGULLAT E ARTË (STRIKTE):

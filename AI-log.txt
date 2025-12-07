@@ -238,11 +238,23 @@ ERROR SyntaxError: C:\Users\Lenovo\Desktop\AAB\Viti 3 Semestri 5\Programimi për
     Njejte edhe per public.goals per delete,insert,update,view.
     Njejte per public.categories per te 4.
     Si me i rregullu.Me shpjego dhe vazhdo
-68.
-69.
-70.
-71.
-72.
+68.Krijoma nje version me te perdorshem per desktop.
+69.cka eshte ky error,fix this
+    Android Bundling failed 2850ms node_modules\expo\AppEntry.js (1 module)
+    ERROR SyntaxError: C:\Users\Lenovo\Desktop\AAB\Viti 3 Semestri 5\Programimi për Pajisje Mobile\AI-Mobile-Gentrit-Hyseni-PF\PersonalFinance\src\screens\ReportsScreen.js: Expected corresponding JSX closing tag for <>. (575:6)
+
+    573 | </View>
+    574 | )}
+
+    575 | </View>
+    | ^
+    576 | </ScrollView>
+    577 | </ResponsiveContainer>
+    578 | );
+70.fix run time errors,until all runtime errors are solved.
+71.Ne web edhe telefon ,cdokund,ku ka shuma te mos lejohet dmth shkronjat.psh 12f po u regjistrojka si 12,kur provon vetem te shfaqet si njoftim qe nuk lejohen shkronjat tek shumat ku regjistrohen,pra edhe tek buxhetet,edhe tek shto,edhe tek shumat tek qellimet.
+    Ne telefon kjo vija si |,cursor (|),te jete pak me e holle,se keshtu eshte shume mire.Edhe te shuma te jete si nje 00.0 siq cka qene,si pamje,spo di. pershembull tek pershkrimi qenka,Shkruaj ketu ... 
+72.ne web,po shihet kjo 0.00,ne telefon jo,pse.Po ashtu ky groq.a te duhet me fshi najsen.Ne groq po del e nejta fore por ne fund po ndryshon,psh qe 5 here ja nisi mee 150 euro dhe 103 per telefon,vetem ne fund po e ndryshon.
 73.
 74.
 75.

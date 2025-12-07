@@ -217,7 +217,14 @@ export default function BudgetScreen({ navigation }) {
                 <Text style={{color: colors.textSecondary, marginBottom: 5}}>Limiti Mujor (€)</Text>
                 <TextInput 
                     value={amountLimit}
-                    onChangeText={setAmountLimit}
+                    onChangeText={(text) => {
+                        // Allow only numbers and decimal point
+                        if (/^[0-9.]*$/.test(text)) {
+                            setAmountLimit(text);
+                        } else {
+                            Alert.alert('Kujdes', 'Ju lutem shkruani vetëm numra.');
+                        }
+                    }}
                     keyboardType="numeric"
                     style={{borderWidth: 1, borderColor: colors.border, borderRadius: 8, padding: 10, color: colors.text, marginBottom: 20, fontSize: 18}}
                     placeholder="0.00"

@@ -27,7 +27,23 @@ export const SmartInput = ({
     if (!isActive || Platform.OS === 'web') return value;
     const val = value || '';
     const start = selection.start || 0;
-    return val.slice(0, start) + '|' + val.slice(start);
+    
+    if (!val && placeholder) {
+        return (
+            <>
+             <Text style={{ fontWeight: '100', opacity: 0.5 }}>|</Text>
+             <Text style={{ color: colors.textSecondary }}>{placeholder}</Text>
+            </>
+        );
+    }
+
+    return (
+      <>
+        {val.slice(0, start)}
+        <Text style={{ fontWeight: '100', opacity: 0.5 }}>|</Text>
+        {val.slice(start)}
+      </>
+    );
   };
 
   const flatStyle = StyleSheet.flatten(style) || {};
@@ -52,14 +68,30 @@ export const SmartInput = ({
       {/* Fake Text with Cursor (Mobile Only) */}
       {Platform.OS !== 'web' && (
         <View pointerEvents="none" style={[style, { position: 'absolute', width: '100%', height: '100%', borderColor: 'transparent', backgroundColor: 'transparent', zIndex: 0 }]}>
-             <Text style={textStyle}>{displayValue()}</Text>
+             {(!value && !isActive) ? (
+                 <Text style={[textStyle, { color: colors.textSecondary }]}>{placeholder}</Text>
+             ) : (
+                 <Text style={textStyle}>{displayValue()}</Text>
+             )}
         </View>
       )}
 
       {/* Real Input */}
       <TextInput
         value={value}
-        onChangeText={onChangeText}
+        onChangeText={(text) => {
+            // Validation for non-numeric characters (Web mainly, but good for all)
+            // Allow numbers, operators (+-*/), dot (.), and empty string
+            if (/^[0-9+\-*/.]*$/.test(text)) {
+                onChangeText(text);
+            } else {
+                // If on Web, we can show an alert. On mobile, the keypad restricts it anyway, 
+                // but if a physical keyboard is used on mobile, this helps too.
+                if (Platform.OS === 'web') {
+                    alert('Ju lutem shkruani vetëm numra dhe operatorë.');
+                }
+            }
+        }}
         onSelectionChange={handleSelectionChange}
         onFocus={onFocus}
         placeholder={placeholder}
