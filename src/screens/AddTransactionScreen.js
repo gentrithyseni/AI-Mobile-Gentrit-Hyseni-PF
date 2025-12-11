@@ -1,8 +1,9 @@
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { ArrowLeft, Calendar, Clock, Plus, Save, Trash2 } from 'lucide-react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { ArrowLeft, Calendar, Camera, Clock, Plus, Save, Trash2 } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { Alert, Keyboard, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Keyboard, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { createCategory, deleteCategory, getCategories } from '../api/categories';
 import { getGoals, updateGoal } from '../api/goals';
 import { createTransaction, deleteTransaction, updateTransaction } from '../api/transactions';
@@ -11,12 +12,14 @@ import { SmartInput } from '../components/SmartInput';
 import { CATEGORY_ICONS, DEFAULT_EXPENSE_CATEGORIES, DEFAULT_INCOME_CATEGORIES } from '../constants/categories';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { ReceiptScannerService } from '../services/receiptScannerLogic';
 import { evaluateExpression } from '../utils/financeCalculations';
 
 export default function AddTransactionScreen({ navigation, route }) {
   const { user } = useAuth();
   const { colors, isDarkMode } = useTheme();
   const [showKeypad, setShowKeypad] = useState(false);
+  const [scanning, setScanning] = useState(false);
   
   // Marrim transaksionin nëse po vijmë për editim
   const transactionToEdit = route.params?.transaction;
@@ -88,6 +91,106 @@ export default function AddTransactionScreen({ navigation, route }) {
     const customs = customCategories.filter(c => c.type === type).map(c => c.name);
     return [...defaults, ...customs];
   }, [type, customCategories]);
+
+  const scanWithCamera = async () => {
+    try {
+      const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+      if (permissionResult.granted === false) {
+        alert("Kërkohet leje për të përdorur kamerën!");
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 0.5,
+        base64: true,
+      });
+
+      processImage(result);
+    } catch (e) {
+      console.error(e);
+      alert("Gabim me kamerën: " + e.message);
+    }
+  };
+
+  const scanWithGallery = async () => {
+    try {
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (permissionResult.granted === false) {
+        alert("Kërkohet leje për të hyrë në galeri!");
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 0.5,
+        base64: true,
+      });
+
+      processImage(result);
+    } catch (e) {
+      console.error(e);
+      alert("Gabim me galerinë: " + e.message);
+    }
+  };
+
+  const processImage = async (result) => {
+    if (!result.canceled && result.assets[0].base64) {
+      setScanning(true);
+      try {
+        const receiptData = await ReceiptScannerService.scanReceipt(result.assets[0].base64);
+        
+        // Auto-fill form
+        setValue('amount', String(receiptData.totalAmount));
+        setSelection({ start: String(receiptData.totalAmount).length, end: String(receiptData.totalAmount).length });
+        
+        if (receiptData.date) {
+          setDate(new Date(receiptData.date));
+        }
+        
+        if (receiptData.merchantName) {
+          setValue('notes', `Blerje në ${receiptData.merchantName}`);
+        }
+
+        if (receiptData.category) {
+            // Try to match category
+            const cat = activeCats.find(c => c.toLowerCase() === receiptData.category.toLowerCase()) || 'Tjetër';
+            setValue('category', cat);
+        }
+
+        alert(`Fatura u skanua me sukses!\nDyqani: ${receiptData.merchantName}\nShuma: ${receiptData.totalAmount}€`);
+
+      } catch (error) {
+        console.error("Scan Error:", error);
+        alert("Gabim gjatë skanimit: " + error.message);
+      } finally {
+        setScanning(false);
+      }
+    }
+  };
+
+  const handleScanReceipt = () => {
+    Alert.alert(
+      "Skano Faturën",
+      "Zgjidhni metodën:",
+      [
+        {
+          text: "Kamera (Live)",
+          onPress: scanWithCamera
+        },
+        {
+          text: "Galeria",
+          onPress: scanWithGallery
+        },
+        {
+          text: "Anulo",
+          style: "cancel"
+        }
+      ]
+    );
+  };
 
   const handleAddCategory = async () => {
     if (!newCategoryName.trim()) return;
@@ -287,33 +390,53 @@ export default function AddTransactionScreen({ navigation, route }) {
             </View>
 
             <Text style={[styles.label, { color: colors.textSecondary }]}>Shuma (€)</Text>
-            <Controller
-                control={control}
-                name="amount"
-                render={({ field: { onChange, value } }) => (
-                <View>
-                  <SmartInput 
-                      value={value}
-                      onChangeText={onChange}
-                      onSelectionChange={(sel) => setSelection(sel)}
-                      selection={selection}
-                      onFocus={() => {
-                          if (Platform.OS !== 'web') {
-                              Keyboard.dismiss();
-                              setShowKeypad(true);
-                          }
-                      }}
-                      isActive={showKeypad}
-                      style={[styles.inputLarge, { color: colors.text, borderColor: colors.border }]} 
-                      placeholder="0.00" 
-                  />
-                  
-                  <Text style={{color: colors.textSecondary, fontSize: 12, marginTop: 4}}>
-                    Mund të shkruani llogaritje (psh. 50+20-5)
-                  </Text>
+            <View style={{flexDirection: 'row', alignItems: 'center', gap: 10}}>
+                <View style={{flex: 1}}>
+                    <Controller
+                        control={control}
+                        name="amount"
+                        render={({ field: { onChange, value } }) => (
+                        <View>
+                        <SmartInput 
+                            value={value}
+                            onChangeText={onChange}
+                            onSelectionChange={(sel) => setSelection(sel)}
+                            selection={selection}
+                            onFocus={() => {
+                                if (Platform.OS !== 'web') {
+                                    Keyboard.dismiss();
+                                    setShowKeypad(true);
+                                }
+                            }}
+                            isActive={showKeypad}
+                            style={[styles.inputLarge, { color: colors.text, borderColor: colors.border }]} 
+                            placeholder="0.00" 
+                        />
+                        </View>
+                        )}
+                    />
                 </View>
-                )}
-            />
+                <TouchableOpacity 
+                    onPress={handleScanReceipt}
+                    disabled={scanning}
+                    style={{
+                        padding: 12, 
+                        backgroundColor: colors.card, 
+                        borderRadius: 12, 
+                        borderWidth: 1, 
+                        borderColor: colors.primary,
+                        marginBottom: 24,
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    }}
+                >
+                    {scanning ? <ActivityIndicator color={colors.primary} /> : <Camera size={24} color={colors.primary} />}
+                </TouchableOpacity>
+            </View>
+                  
+            <Text style={{color: colors.textSecondary, fontSize: 12, marginTop: -20, marginBottom: 20}}>
+            Mund të shkruani llogaritje (psh. 50+20-5)
+            </Text>
 
             <Text style={[styles.label, { color: colors.textSecondary }]}>Kategoria</Text>
             {!selectedGoalId && (

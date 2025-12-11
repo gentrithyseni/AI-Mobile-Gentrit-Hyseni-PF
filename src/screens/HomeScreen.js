@@ -107,18 +107,36 @@ export default function HomeScreen({ navigation }) {
             .slice(0, 3);
 
         setAiAdvice(prev => ({ ...prev, loading: true }));
-        const advice = await getFinancialAdvice(totalIncome, totalExpense, balance, tx.slice(0, 5), topCategories, user.id);
-        setAiAdvice({ text: advice, loading: false });
+        
+        // OPTIMIZIM: Shfaqim të dhënat menjëherë, pastaj presim AI-në
+        setTransactions(tx || []);
+        setGoals(fetchedGoals || []);
+        setLoading(false); 
+        setRefreshing(false);
+
+        // Thirrja e AI në prapavijë
+        getFinancialAdvice(totalIncome, totalExpense, balance, tx.slice(0, 5), topCategories, user.id)
+          .then(advice => {
+             setAiAdvice({ text: advice, loading: false });
+          })
+          .catch(err => {
+             console.error("AI Error:", err);
+             setAiAdvice({ text: "S'mund të gjeneroja këshillë tani.", loading: false });
+          });
+
       } else {
+        setTransactions([]);
+        setGoals(fetchedGoals || []);
+        setLoading(false);
+        setRefreshing(false);
         setAiAdvice({ text: "Shto transaksione për të marrë këshilla!", loading: false });
       }
 
     } catch (e) {
       console.error("Gabim:", e);
       showToast('Gabim gjatë ngarkimit të të dhënave', 'error');
-    } finally {
-      setRefreshing(false);
       setLoading(false);
+      setRefreshing(false);
     }
   }, [user]);
 
