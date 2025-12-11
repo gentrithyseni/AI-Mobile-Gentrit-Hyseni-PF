@@ -89,7 +89,7 @@ export async function getFinancialAdvice(income, expense, balance, recentTransac
         "Fokusohu tek investimet afatgjata.",
         "Bëhu shumë sarkastik për shpenzimet e panevojshme.",
         "Bëhu inkurajues dhe pozitiv.",
-        "Përdor metafora nga futbolli ose sporti.",
+        "Përdor metafora nga futbolli, sporti ose tema aktuale te njohura.",
         "Krahaso shpenzimet me gjëra qesharake.",
         "Fokusohu tek balanci mujor.",
         "Jep një këshillë filozofike për paranë."
@@ -98,7 +98,7 @@ export async function getFinancialAdvice(income, expense, balance, recentTransac
 
     // Prompt i përmirësuar për të hequr etiketat "Ofendon:"
     const prompt = `
-      Vepro si një ekspert dhe keshilltar i lartë financiar që ka edhe sens humori të zi. Analizo këto të dhëna:
+      Vepro si një ekspert dhe keshilltar i lartë financiar që ka edhe sens humori. Analizo këto të dhëna:
       - Të hyra: €${income}
       - Shpenzime: €${expense}
       - Bilanci: €${balance}
@@ -110,14 +110,14 @@ export async function getFinancialAdvice(income, expense, balance, recentTransac
       Stili i përgjigjes sot: ${randomStyle}
 
       Struktura e përgjigjes (Ndiqe fiks këtë strukturë):
-      1. Jep një këshillë serioze dhe konkrete financiare (max 1 fjali). Përdor emoji. MOS i përsërit shifrat e mia, shko direkt tek thelbi.
-      2. Menjëherë pas saj (në rresht të ri), bëj një koment "thumbues" por me humor (roast) për shpenzimet e mia. Mos u bëj ofendues apo i vrazhdë, por përdor sarkazëm inteligjente dhe qesharake. Qëllimi është të qeshim, jo të ofendohemi. (Max 1 fjali).
+      1. Jep një këshillë serioze dhe konkrete financiare (max 1 fjali). Përdor emoji. MOS i përsërit shifrat e mia, shko direkt tek thelbi.Mundohu te jepesh keshilla praktike dhe të dobishme edhe per jeten reale.
+      2. Menjëherë pas saj (në rresht të ri), bëj një koment "thumbues" por me humor (roast) për shpenzimet e mia. Përdor sarkazëm,metafora,roast,thumbime ne menyre inteligjente dhe qesharake. Perdor EMOJI.MOS i zgjat shume fjalite. (Max 1 fjali).
       
       RREGULLAT E ARTË (STRIKTE):
       - MOS shkruaj fjalë si "Ofendim:", "Humor:", "Shaka:", "Roast:" në fillim të fjalisë.
       - Filloje shakanë direkt.
       - Përdor gjuhën SHQIP.
-      - Bëhu si një shok që bën shaka, jo si një gjykatës i ashpër.
+      - Bëhu si një shok që bën shaka,humor me mua.
     `;
 
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -129,7 +129,7 @@ export async function getFinancialAdvice(income, expense, balance, recentTransac
       body: JSON.stringify({
         model: "llama-3.3-70b-versatile", 
         messages: [{ role: "user", content: prompt }],
-        temperature: 0.7, // Pak më kreativ për humorin
+        temperature: 0.8, // Pak më kreativ për humorin
         max_tokens: 200
       }),
     });
