@@ -16,7 +16,7 @@ export const CATEGORY_ICONS = {
   'Edukim': { icon: GraduationCap, color: '#4F46E5' }, // Indigo
   'Telefon': { icon: Smartphone, color: '#0EA5E9' }, // Sky Blue
   'Rroba': { icon: Shirt, color: '#DB2777' }, // Pink
-  'Teknologji': { icon: Laptop, color: '#6366F1' }, // Indigo
+  'Teknologji': { icon: Laptop, color: '#14B8A6' }, // Teal
   'Bonus': { icon: Star, color: '#EAB308' }, // Yellow
   'Part-time': { icon: Clock, color: '#F59E0B' }, // Amber
   'Tjetër': { icon: ShoppingBag, color: '#9CA3AF' }, // Gray

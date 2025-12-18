@@ -186,11 +186,20 @@ export default function HomeScreen({ navigation }) {
       acc[t.category] = (acc[t.category] || 0) + Number(t.amount);
       return acc;
     }, {});
-    const colors = ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6'];
+    
+    const fallbackColors = ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6', '#EC4899', '#6366F1', '#14B8A6', '#F97316', '#84CC16'];
+    const getFallbackColor = (str) => {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            hash = str.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        return fallbackColors[Math.abs(hash) % fallbackColors.length];
+    };
+    
     return Object.keys(byCat).map((key, i) => ({
       x: key,
       y: byCat[key],
-      color: colors[i % colors.length]
+      color: CATEGORY_ICONS[key]?.color || getFallbackColor(key)
     }));
   }, [transactions, selectedDate]);
 

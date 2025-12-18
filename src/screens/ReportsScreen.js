@@ -4,7 +4,7 @@ import { ActivityIndicator, Modal, ScrollView, StyleSheet, Text, TouchableOpacit
 import Svg, { G, Path, Rect, Text as SvgText } from 'react-native-svg';
 import { getTransactions } from '../api/transactions';
 import { ResponsiveContainer } from '../components/ResponsiveContainer';
-import { DEFAULT_INCOME_CATEGORIES } from '../constants/categories';
+import { CATEGORY_ICONS, DEFAULT_INCOME_CATEGORIES } from '../constants/categories';
 import { useAuth } from '../contexts/AuthContext';
 import { useFilter } from '../contexts/FilterContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -291,12 +291,21 @@ export default function ReportsScreen({ navigation }) {
       acc[t.category] = (acc[t.category] || 0) + Number(t.amount);
       return acc;
     }, {});
-    const colors = ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6', '#EC4899'];
+    
+    const fallbackColors = ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6', '#EC4899', '#6366F1', '#14B8A6', '#F97316', '#84CC16'];
+    const getFallbackColor = (str) => {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            hash = str.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        return fallbackColors[Math.abs(hash) % fallbackColors.length];
+    };
+
     return Object.keys(byCat)
       .map((key, i) => ({
         x: key,
         y: byCat[key],
-        color: colors[i % colors.length]
+        color: CATEGORY_ICONS[key]?.color || getFallbackColor(key)
       }))
       .sort((a, b) => b.y - a.y);
   }, [filteredTransactions]);
@@ -456,7 +465,7 @@ export default function ReportsScreen({ navigation }) {
          <View>
              <Text style={{color: colors.textSecondary, fontSize: 12}}>Krahasuar me muajin e kaluar</Text>
              <Text style={{color: colors.text, fontWeight:'bold', fontSize: 16}}>
-                 € {comparisonData.diff > 0 ? '+' : '-'}{formatCurrency(Math.abs(comparisonData.diff))} ({Math.abs(comparisonData.percent).toFixed(1)}%)
+                 € {comparisonData.diff > 0 ? '-' : '+'}{formatCurrency(Math.abs(comparisonData.diff))} ({Math.abs(comparisonData.percent).toFixed(1)}%)
              </Text>
          </View>
          <View style={{flexDirection:'row', alignItems:'center', gap: 5, backgroundColor: comparisonData.diff > 0 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)', padding: 8, borderRadius: 12}}>
